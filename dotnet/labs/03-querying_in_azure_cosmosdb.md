@@ -1,35 +1,35 @@
-# Querying in Azure Cosmos DB
+# Azure Cosmos DBでのクエリ
 
-Azure Cosmos DB SQL API accounts provide support for querying items using the Structured Query Language (SQL), one of the most familiar and popular query languages, as a JSON query language. In this lab, you will explore how to use these rich query capabilities directly through the Azure Portal. No separate tools or client side code are required.
+Azure Cosmos DB SQL API アカウントでは、最も使い慣れた一般的なクエリ言語の 1 つである構造化クエリ言語 (SQL) を JSON クエリ言語として使用して、アイテムのクエリを実行できます。このラボでは、これらの豊富なクエリ機能を Azure ポータルから直接使用する方法について説明します。個別のツールやクライアント側のコードは必要ありません。
 
-If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
+> これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-## Query Overview
+## クエリの概要
 
-Querying JSON with SQL allows Azure Cosmos DB to combine the advantages of a legacy relational databases with a NoSQL database. You can use many rich query capabilities such as sub-queries or aggregation functions but still retain the many advantages of modeling data in a NoSQL database.
+SQL を使用して JSON に対してクエリを実行すると、Azure Cosmos DB はレガシ リレーショナル データベースの利点と NoSQL データベースを組み合わせることができます。サブクエリや集計関数など、多くの豊富なクエリ機能を使用できますが、NoSQL データベースでデータをモデル化する多くの利点は引き続き使用できます。
 
-Azure Cosmos DB supports strict JSON items only. The type system and expressions are restricted to deal only with JSON types. For more information, see the [JSON specification](https://www.json.org/).
+Azure Cosmos DB では、厳密な JSON 項目のみがサポートされています。型システムと式は、JSON 型のみを処理するように制限されています。詳細については、[JSON specification](https://www.json.org/)に関するページを参照してください。
 
-## Running your first query
+## はじめてのクエリ
 
-In this lab section, you will query your **FoodCollection**. You must complete [Lab 02 - Load data with Azure Data Factory](https://azurecosmosdb.github.io/labs/dotnet/labs/02-load_data_with_adf.html) before starting this lab.
+このセクションでは、**FoodCollection**に対してクエリを実行します。このラボを開始する前に、[Lab 02 - ADFを使用したデータのインポート](02-load_data_with_adf.md)を完了しておく必要があります。
 
-You will begin by running basic queries with `SELECT`, `WHERE`, and `FROM` clauses.
+最初は`SELECT`、`WHERE`や`FROM`といった基本的な句を使用したクエリを実行します。
 
-### Open Data Explorer
+### データエクスプローラーを開く
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
-2. In the **Data Explorer** section, expand the **NutritionDatabase** database node and then expand the **FoodCollection** container node.
-3. Within the **FoodCollection** node, select the **Items** link.
-4. View the items within the container. Observe how these documents have many properties, including arrays.
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
+2. **データエクスプローラー** セクションで**NutritionDatabase**データベースノードを展開して、さらに**FoodCollection**コンテナーノードを展開します。
+3. **FoodCollection**ノードで、**Items**リンクを選択します。
+4. コンテナー内のアイテムを確認します。これらのドキュメントに配列を含む多くのプロパティがあることを確認します。
 
     ![The NutritionDatabase and FoodCollection is displayed and highlighted](../media/04-food_container.jpg "Browse to the FoodCollection and select an item to review its properties")
 
-5. Select **New SQL Query**.
+5. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
 
       ![New SQL Query is highlighted](../media/04-new_query.jpg "Create a new SQL Query")
 
-6. Paste the following SQL query and select **Execute Query**.
+6. 以下のクエリを貼り付け、**Execute Query**でクエリを実行します。
 
     ```sql
     SELECT *
@@ -37,15 +37,15 @@ You will begin by running basic queries with `SELECT`, `WHERE`, and `FROM` claus
     WHERE food.foodGroup = "Snacks" and food.id = "19015"
     ```
 
-7. You will see that the query returned the single document where id is "19015" and the foodGroup is "Snacks". Explore the structure of this item as it is representative of the items within the **FoodCollection** container that we will be working with for the remainder of this section.
+7. クエリが id が "19015" で、foodGroup が "Snacks" である単一のドキュメントを返したことがわかります。このセクションの残りの部分で使用する**FoodCollection**コンテナー内のアイテムを代表するこのアイテムの構造を調べます。
 
       ![The query results are displayed](../media/04-query_01_results.jpg "Review the results")
 
-## Dot and quoted property projection accessors
+## 検索結果の選択
 
-You can choose which properties of the document to project into the result using the dot notation. If you wanted to return only the item's id you could run the query below.
+ドット表記を使用して、結果に投影するドキュメントのプロパティを選択できます。アイテムのIDのみを返す場合は、以下のクエリを実行できます。
 
-Select **New SQL Query**. Paste the following SQL query and selecting **Execute Query**.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.id
@@ -53,7 +53,7 @@ FROM food
 WHERE food.foodGroup = "Snacks" and food.id = "19015"
 ```
 
-Though less common, you can also access properties using the quoted property operator [""]. For example, SELECT food.id and SELECT food["id"] are equivalent. This syntax is useful to escape a property that contains spaces, special characters, or has the same name as a SQL keyword or reserved word.
+あまり一般的ではありませんが、引用符で囲まれたプロパティ演算子 [""] を使用してプロパティにアクセスすることもできます。たとえば、SELECT food.id と SELECT food["id"] は同等です。この構文は、スペースや特殊文字を含むプロパティ、または SQL キーワードや予約語と同じ名前を持つプロパティをエスケープする場合に便利です。
 
 ```sql
 SELECT food["id"]
@@ -61,13 +61,11 @@ FROM food
 WHERE food["foodGroup"] = "Snacks" and food["id"] = "19015"
 ```
 
-## WHERE clauses
+## WHERE句
 
-Let’s explore WHERE clauses. You can add complex scalar expressions including arithmetic, comparison and logical operators in the WHERE clause.
+WHERE 句を調べてみましょう。算術演算子、比較演算子、論理演算子などの複雑なスカラー式を WHERE 句に追加できます。
 
-Run the below query by selecting the **New SQL Query**.
-
-Paste the following SQL query and then select **Execute Query**.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.id,
@@ -79,9 +77,9 @@ FROM food
 WHERE (food.manufacturerName = "The Coca-Cola Company" AND food.version > 0)
 ```
 
-This query will return the id, description, servings, tags, foodGroup, manufacturerName and version for items with "The Coca-Cola Company" for manufacturerName and a version greater than 0.
+このクエリは、manufacturerNameが"The Coca-Cola Company"でversionが0より大きいアイテムのid、description、tags、foodGroup、versionを返します。
 
-Your first result document should be:
+検索結果の1件目は以下のようになります。
 
 ```json
 {
@@ -104,17 +102,15 @@ Your first result document should be:
 }
 ```
 
-You should note that where the query returned the results of tags node it projected the entire contents of the property which in this case is an array.
+クエリがtagsの値としてJSON配列を返したことに気付いてください。
 
-## Advanced projection
+## プロジェクション
 
-Azure Cosmos DB supports several forms of transformation on the resultant JSON. One of the simplest is to alias your JSON elements using the AS aliasing keyword as you project your results.
+Azure Cosmos DB では、結果の JSON でいくつかの形式の変換がサポートされています。最も簡単な方法の 1 つは、結果を投影するときに``AS``エイリアシング キーワードを使用して JSON 要素にエイリアスを付けることです。
 
-By running the query below you will see that the element names are transformed. In addition, the projection is accessing only the first element in the servings array for all items specified by the WHERE clause.
+以下のクエリを実行すると、要素名が変換されていることがわかります。更にプロジェクションを利用して、WHERE 句で指定されたすべての項目の servings 配列の最初の要素にのみアクセスします。
 
-Run the below query by selecting the **New SQL Query**.
-
-Paste the following SQL query and then select **Execute Query**.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.description,
@@ -126,13 +122,11 @@ WHERE food.foodGroup = "Fruits and Fruit Juices"
 AND food.servings[0].description = "cup"
 ```
 
-## ORDER BY clause
+## ORDER BY句
 
-Azure Cosmos DB supports adding an ORDER BY clause to sort results based on one or more properties
+Azure Cosmos DB では、1 つ以上のプロパティに基づいて結果を並べ替える ORDER BY 句の追加がサポートされています
 
-Run the below query by selecting the **New SQL Query**.
-
-Paste the following SQL query and then select **Execute Query**.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.description,
@@ -144,14 +138,14 @@ WHERE food.foodGroup = "Fruits and Fruit Juices" AND food.servings[0].descriptio
 ORDER BY food.servings[0].weightInGrams DESC
 ```
 
-You can learn more about configuring the required indexes for an Order By clause in the later Indexing Lab or by reading [our docs](
-https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-order-by).
+ORDER BY句に必要なインデックスの構成の詳細については、後のインデックス作成ラボを参照するか[ドキュメント](
+https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-order-by)を参照してください。
 
-## Limiting query result size
+## 検索結果のサイズ制限
 
-Azure Cosmos DB supports the TOP keyword. TOP can be used to limit the number of returning values from a query.
+Azure Cosmos DB では、TOP キーワードがサポートされています。TOP を使用すると、クエリから返される値の数を制限できます。
 
-Run the query below to see the top 20 results.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT TOP 20 food.id,
@@ -162,7 +156,9 @@ FROM food
 WHERE food.foodGroup = "Snacks"
 ```
 
-The OFFSET LIMIT clause is an optional clause to skip then take some number of values from the query. The OFFSET count and the LIMIT count are required in the OFFSET LIMIT clause.
+OFFSET LIMIT句は、クエリからいくつかの値をスキップして取得するオプションの句です。OFFSET countとLIMIT countは、OFFSET LIMIT句で必須です。
+
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.id,
@@ -175,13 +171,13 @@ ORDER BY food.id
 OFFSET 10 LIMIT 10
 ```
 
-When OFFSET LIMIT is used in conjunction with an ORDER BY clause, the result set is produced by doing skip and take on the ordered values. If no ORDER BY clause is used, it will result in a deterministic order of values.
+OFFSET LIMIT を ORDER BY 句と組み合わせて使用すると、順序付けられた値に対してスキップして取得することによって結果セットが生成されます。ORDER BY 句を使用しない場合は、結果の順序は常に同じになります。
 
-## More advanced filtering
+## さらに高度なフィルタリング
 
-Let’s add the IN and BETWEEN keywords into our queries. IN can be used to check whether a specified value matches any element in a given list and BETWEEN can be used to run queries against a range of values.
+INキーワードと BETWEENキーワードをクエリに追加しましょう。INは、指定された値が特定のリスト内のいずれかの要素と一致するかどうかを確認するために使用でき、BETWEENを使用して値の範囲に対してクエリを実行できます。
 
-Run the query below:
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.id,
@@ -194,11 +190,11 @@ WHERE food.foodGroup IN ("Poultry Products", "Sausages and Luncheon Meats")
     AND (food.id BETWEEN "05740" AND "07050")
 ```
 
-## More advanced projection
+## さらに高度なプロジェクション
 
-Azure Cosmos DB supports JSON projection within its queries. Let’s project a new JSON Object with modified property names.
+Azure Cosmos DBでは、クエリ内でJSONプロジェクションがサポートされています。プロパティ名を変更した新しいJSONオブジェクトを投影してみましょう。
 
-Run the query below to see the results.
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT {
@@ -212,13 +208,14 @@ FROM food
 WHERE food.id = "21421"
 ```
 
-## JOIN within your documents
+## ドキュメントを結合する
 
-Azure Cosmos DB’s JOIN supports intra-document and self-joins. Azure Cosmos DB does not support JOINs across documents or containers.
+Azure Cosmos DBのJOINでは、ドキュメント内結合と自己結合がサポートされています。Azure Cosmos DBでは、ドキュメントまたはコンテナー間でのJOINはサポートされていません。
 
-In an earlier query example we returned a result with attributes of just the first serving of the food.servings array. By using the join syntax below, we can now return an item in the result for every item within the serving array while still being able to project the attributes from elsewhere in the item.
+前のクエリの例では、food.servings配列の最初のservingsの属性のみを含む結果を返しました。JOINを使用することで、servings配列内のすべての項目で指定した属性を結果に含めることができます。
 
-Run the query below to iterate on the food document’s servings.
+以下のクエリを実行して、foodドキュメントのservingsを反復処理します。
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT
@@ -229,7 +226,7 @@ JOIN serving IN food.servings
 WHERE food.id = "03226"
 ```
 
-JOINs are useful if you need to filter on properties within an array. Run the below example that has filter after the intra-document JOIN.
+JOINは、配列内のプロパティをフィルター処理する必要がある場合に便利です。ドキュメント内JOINの後にフィルターがある次の例を実行します。
 
 ```sql
 SELECT VALUE COUNT(1)
@@ -239,11 +236,12 @@ JOIN s IN c.servings
 WHERE t.name = 'infant formula' AND s.amount > 1
 ```
 
-## System functions
+## システム関数
 
-Azure Cosmos DB supports a number of built-in functions for common operations. They cover mathematical functions like ABS, FLOOR and ROUND and type checking functions like IS_ARRAY, IS_BOOL and IS_DEFINED. [Learn more about supported system functions](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-system-functions).
+Azure Cosmos DB では、一般的な操作のための多数の組み込み関数がサポートされています。これらは、ABS、FLOOR、ROUNDなどの数学関数と、IS_ARRAY、IS_BOOL、IS_DEFINEDなどの型チェック関数をカバーしています。サポートされているシステム機能の詳細については、[こちら](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-system-functions)をご覧ください。
 
-Run the query below to see example use of some system functions
+以下のクエリを実行して、いくつかのシステム関数の使用例を確認してください。
+**New SQL Query**で新しいタブを作成し、以下のクエリを貼り付けて**Execute Query**を選択します。
 
 ```sql
 SELECT food.id,
@@ -258,17 +256,17 @@ AND food.foodGroup IN ("Sausages and Luncheon Meats", "Legumes and Legume Produc
 AND food.id > "42178"
 ```
 
-## Correlated sub-queries
+## 相関サブクエリ
 
-In many scenarios, a sub-query may be effective. A correlated sub-query is a query that references values from an outer query. We will walk through some of the most useful examples here. You can [learn more about subqueries](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-subquery).
+多くのシナリオでは、サブクエリが効果的です。相関サブクエリは、外部クエリの値を参照するクエリです。ここでは、最も有用な例のいくつかについて説明します。サブクエリの詳細については、[こちら](https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-subquery)をご覧ください。
 
-There are two types of sub-queries: Multi-value sub-queries and scalar sub-queries. Multi-value sub-queries return a set of documents and are always used within the FROM clause. A scalar sub-query expression is a sub-query that evaluates to a single value.
+サブクエリには、複数値サブクエリとスカラー サブクエリの2種類があります。複数値のサブクエリは一連のドキュメントを返し、常に FROM句内で使用されます。スカラー サブクエリ式は、単一の値に評価されるサブクエリです。
 
-### Multi-value subqueries
+### 複数値サブクエリ
 
-You can optimize JOIN expressions with a sub-query.
+サブクエリを使用して JOIN式を最適化できます。
 
-Consider the following query which performs a self-join and then applies a filter on name, nutritionValue, and amount. We can use a sub-query to filter out the joined array items before joining with the next expression.
+自己結合を実行し、name、nutritionValue、およびamountにフィルターを適用する次のクエリについて考えてみます。サブクエリを使用して、次の式と結合する前に、結合された配列項目を除外できます。
 
 ```sql
 SELECT VALUE COUNT(1)
@@ -280,7 +278,7 @@ WHERE t.name = 'infant formula' AND (n.nutritionValue > 0
 AND n.nutritionValue < 10) AND s.amount > 1
 ```
 
-We could rewrite this query using three sub-queries to optimize and reduce the Request Unit (RU) charge. Observe that the multi-value sub-query always appears in the FROM clause of the outer query.
+3 つのサブクエリを使用してこのクエリを書き直し、要求ユニット (RU) の料金を最適化して削減できます。複数値のサブクエリが常に外部クエリの FROM 句に表示されることを確認します。
 
 ```sql
 SELECT VALUE COUNT(1)
@@ -290,11 +288,11 @@ JOIN (SELECT VALUE n FROM n IN c.nutrients WHERE n.nutritionValue > 0 AND n.nutr
 JOIN (SELECT VALUE s FROM s IN c.servings WHERE s.amount > 1)
 ```
 
-### Scalar sub-queries
+### スカラーサブクエリ
 
-One use case of scalar sub-queries is rewriting ARRAY_CONTAINS as EXISTS.
+スカラーサブクエリのユースケースの1つは、ARRAY_CONTAINSをEXISTSとして書き換えることです。
 
-Consider the following query that uses ARRAY_CONTAINS:
+ARRAY_CONTAINSを使用する次のクエリについて考えてみます。
 
 ```sql
 SELECT TOP 5 f.id, f.tags
@@ -302,7 +300,7 @@ FROM food f
 WHERE ARRAY_CONTAINS(f.tags, {name: 'orange'})
 ```
 
-Run the following query which has the same results but uses EXISTS:
+同じ結果を持つが EXISTS を使用する次のクエリを実行します。
 
 ```sql
 SELECT TOP 5 f.id, f.tags
@@ -310,9 +308,9 @@ FROM food f
 WHERE EXISTS(SELECT VALUE t FROM t IN f.tags WHERE t.name = 'orange')
 ```
 
-The major advantage of using EXISTS is the ability to have complex filters in the EXISTS function, rather than just the simple equality filters which ARRAY_CONTAINS permits. 
+EXISTS を使用する主な利点は、ARRAY_CONTAINS許可される単純な等値フィルターだけでなく、EXISTS 関数に複雑なフィルターを含めることができることです。
 
-Here is an example:
+次に例を示します。
 
 ```sql
 SELECT VALUE c.description
@@ -321,4 +319,4 @@ JOIN n IN c.nutrients
 WHERE n.units= "mg" AND n.nutritionValue > 0
 ```
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
