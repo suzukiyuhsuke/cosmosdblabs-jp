@@ -1,184 +1,192 @@
-# Load Data Into Cosmos DB with ADF
+ # ADFを使用してCosmos DBにデータをインポートする
 
-In this lab, you will populate an Azure Cosmos DB container from an existing set of data using tools built in to Azure. After importing, you will use the Azure portal to view your imported data.
+このラボでは、Azure に組み込まれているツールを使用して、既存のデータ セットから Azure Cosmos DB コンテナーを設定します。インポート後、Azure portal を使用してインポートしたデータを表示します。
 
-> If you have not already completed setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.  This will create an Azure Cosmos DB database and container that you will use throughout the lab. You will also use an **Azure Data Factory (ADF)** resource to import existing data into your container.
+> ラボ コンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。これにより、ラボ全体で使用する Azure Cosmos DB データベースとコンテナーが作成されます。また、**Azure データ ファクトリ**(ADF) リソースを使用して、既存のデータをコンテナーにインポートすることもできます。
 
-## Create Azure Cosmos DB Database and Container
+## Azure Cosmos DB データベースとコンテナーを作成する
 
-You will now create a database and container within your Azure Cosmos DB account.
+Azure Cosmos DB アカウント内にデータベースとコンテナーを作成します。
 
-1. Navigate to the [Azure Portal](https://portal.azure.com)
+1. [Azure Portal](https://portal.azure.com)に移動します。
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. ポータルの左側で**Resource groups**リンクを選択します。
 
     ![Resource groups is highlighted](../media/03-resource_groups.jpg "Select the Resource Groups")
 
-1. In the **Resource groups** blade, locate and select the **cosmoslabs** resource group.
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
     ![The cosmoslabs resource group is highlighted](../media/03-lab_resource_group.jpg "Select the cosmoslabs resource group")
+　
+    > [アカウントのセットアップ](00-account_setup.md)で異なるリソースグループ名を指定した場合は、そのリソースグループ名を使用してください。
 
-1. In the **cosmoslabs** blade, select the **Azure Cosmos DB** account you recently created.
+1. **cosmoslabs**ブレードで、作成されている**Azure Cosmos DB**を選択します。
 
     ![The Cosmos DB resource is highlighted](../media/03-cosmos_resource.jpg "Select the cosmoslabs resource")
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Overview** link on the left side of the blade. At the top select the **Add Container** button.
+1. **Azure Cosmos DB**ブレードで、左側にある**概要**リンクを見つけて選択します。右側のペインで上部にある**コンテナーの追加**ボタンを選択します。
 
     ![Add container link is highlighted](../media/03-add_collection.jpg "Add a new container")
 
-1. In the **Add Container** popup, perform the following actions:
+1. **コンテナーの追加**ポップアップで、以下の操作を実行します。　
 
-    1. In the **Database id** field, select the **Create new** option and enter the value **ImportDatabase**.
+    1. **Database id**フィールドで**Create new**オプションを選択し、**ImportDatabase**を`Database id`に指定します。
 
-    2. Do not check the **Provision database throughput** option.
+    2. **Share throughput across containers**オプションをオフにします。
 
-        > Provisioning throughput for a database allows you to share the throughput among all the containers that belong to that database. Within an Azure Cosmos DB database, you can have a set of containers which shares the throughput as well as containers, which have dedicated throughput.
+        > **Share throughput across containers**をオンにすると、そのデータベースに属するすべてのコンテナー間でスループットが共有されます。**Azure Cosmos DB**データベース内には、スループットを共有するコンテナーのセットと、専用のスループットを持つコンテナーを含めることができます。
 
-    3. In the **Container Id** field, enter the value **FoodCollection**.
+    3. **Container Id**フィールドには、**FoodCollection**を入力します。
 
-    4. In the **Partition key** field, enter the value ``/foodGroup``.
+    4. **Partition key**フィールドには``/foodGroup``を入力します。
 
-    5. In the **Throughput** field, enter the value ``11000``. *Note: we will reduce this to 400 RU/s after the data has been imported*
+    5. **Throughput**フィールドには、``11000``を入力します。 *註: データのインポート後に、この値は400RU/sに変更します。*
 
-    6. Select the **OK** button.
+    6. **OK**ボタンを選択します。
 
-1. Wait for the creation of the new **database** and **container** to finish before moving on with this lab.
+1. 新しい**データベース**と**コンテナー**の作成が完了するのを待って、次の手順に進みます。
 
-## Import Lab Data Into Container
+## ラボデータをコンテナーにインポートする
 
-You will use **Azure Data Factory (ADF)** to import the JSON array stored in the **nutrition.json** file from Azure Blob Storage.
+**Azure Data Factory (ADF)**を使用して、**nutrition.json**ファイルに格納されているJSONデータをAzure Blob Storageからインポートします。
 
-You do not need to do Steps 1-4 in this section and can proceed to Step 4 by opening your Data Factory (named importNutritionData with a random number suffix)if you are completing the lab through Microsoft Hands-on Labs or ran the setup script, you can use the pre-created Data Factory within your resource group.
+このセクションの手順１から４を実行しなくても、セットアップで作成済みのimportNutirationDataから始まるData Factoryリソースを使用して、手順４以降を実施することができます。
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. Azureポータルの左側で、**Resource groups**を選択します。
 
-    > To learn more about copying data to Cosmos DB with ADF, please read [ADF's documentation](https://docs.microsoft.com/azure/data-factory/connector-azure-cosmos-db).
+    > ADFを利用してCosmos DBにデータをコピーする方法の詳細については、[ADFのドキュメント](https://docs.microsoft.com/azure/data-factory/connector-azure-cosmos-db)を参照してください。
 
     ![Resource groups link is highlighted](../media/03-resource_groups.jpg "Select Resource Groups")
 
-1. In the **Resource groups** blade, locate and select the **cosmoslabs** resource group.
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
-1. If you see a Data Factory resource, you can skip to step 4, otherwise select **Add** to add a new resource
+1. すでにAzure Data Factoryリソースが存在する場合は、手順４に進んでください。そうでない場合は、**追加**を選択して新しいリソースを作成します。
 
     ![A data factory resource is highlighted](../media/03-adf-isntance.png "Review if you have data factory already")
 
     ![Select Add in the nav bar](../media/03-add_adf.jpg "Add a new resource")
 
-   - Search for **Data Factory** and select it. 
-   - Create a new **Data Factory**. You should name this data factory **importnutritiondata** with a unique number appended and select the relevant Azure subscription. You should ensure your existing **cosmoslabs** resource group is selected as well as a Version **V2**. 
-   - Select **East US** as the region. Do not select **Enable GIT** (this may be checked by default). 
-   - Select **Create**.
+   - **データファクトリー**を検索して選択します。 
+   - 新しい**データファクトリー**を作成します。データファクトリの名称は、**importnutritiondata**で始まるユニークな番号を付与したものとして、このラボを実行するサブスクリプションに紐づけます。既存の**cosmoslabs**リソースグループと**V2**バージョンを選択するようにします。 
+   - **East US**リージョンを選択します。（任意のリージョンでも問題ありません）**Gitを有効にする**は選択しないでください。(デフォルトでチェックされている場合があります) 
+   - **確認と作成**を選択します。
 
         ![The new data factory dialog is displayed](../media/03-adf_selections.jpg "Add a new Data Factory resource")
 
-1. After creation, open your newly created Data Factory. Select **Author & Monitor** and you will launch ADF.
+1. 作成後、新しく作成したデータ ファクトリを開きます。**スタジオの起動**を選択すると、ADF が起動します。
 
     ![The overview blade is displayed for ADF](../media/03-adf_author&monitor.jpg "Select Author and Monitor link")
 
-1. Select **Copy Data**.
+1. スタジオで**取り込み**を選択します。
 
-   - We will be using ADF for a one-time copy of data from a source JSON file on Azure Blob Storage to a database in Cosmos DB’s SQL API. ADF can also be used for more frequent data transfers from Cosmos DB to other data stores.
+   - Azure BLOB ストレージ上のソース JSON ファイルから Cosmos DB の SQL API 内のデータベースへのデータの 1 回限りのコピーには、ADF を使用します。ADF は、Cosmos DB から他のデータ ストアへのより頻繁なデータ転送にも使用できます。
 
     ![The main workspace page is displayed for ADF](../media/03-adf_copydata.jpg "Select the Copy Data activity")
 
-1. Edit basic properties for this data copy. You should name the task **ImportNutrition** and select to **Run once now**, then select **Next**
+1. プロパティで、以下の操作をします。
+    1. **タスクの種類**で``組み込みコピータスク``を選択します。
+    1. **タスクの実行またはタスクのスケジュール**で**今すぐ1回実行する**を選択します。
+    1. **次へ**ボタンを選択します。
 
    ![The copy data activity properties dialog is displayed](../media/03-adf_properties.jpg "Enter a task name and the schedule")
 
-1. **Create a new connection** and select **Azure Blob Storage**. We will import data from a json file on Azure Blob Storage. In addition to Blob Storage, you can use ADF to migrate from a wide variety of sources. We will not cover migration from these sources in this tutorial.
+1. ソースデータストアで、以下の操作をします。
+    1. **+新しい接続**ボタンを選択します。
+    1. ポップアップで**Azure BLOBストレージ**を選択し、**続行**を選択します。
 
     ![Create new connection link is highlighted](../media/03-adf_blob.jpg "Create a new connection")
 
     ![Azure Blog Storage is highlighted](../media/03-adf_blob2.jpg "Select the Azure Blob Storage connection type")
 
-1. Name the source **NutritionJson** and select **SAS URI** as the Authentication method. Please use the following SAS URI for read-only access to this Blob Storage container:
+1. 新しい接続の名前に**NutritionJson**を入力し、認証の種類で**SAS URI**を選択します。**SAS URL**には以下の値を使用してください。
 
      `https://cosmoslabsstorageaccount.blob.core.windows.net/nutrition-data?si=container-list-read-policy&spr=https&sv=2021-06-08&sr=c&sig=jGrmrokYikbgbuW9we2am%2BwAq%2BC%2BxfZcPYswOeSQpAU%3D`
 
     ![The New linked service dialog is displayed](../media/03-adf_connecttoblob.jpg "Enter the SAS url in the dialog")
 
-1. Select **Create**
-1. Select **Next**
-1. In the **File or Folder** textbox, enter the folder name as ``nutirion-data`` and then click on **Browse** to select the **nutrition-data** folder. Finally select **NutritionData.json** file.
+1. **作成**を選択します。
+1. **次へ**を選択します。
+1. **ファイルまたはフォルダー**テキストボックスにフォルダー名``nutirion-data``を入力し、**参照**を選択します。続いて、開いたダイアログで**NutritionData.json** ファイルを選択します。
 
     ![The nutritiiondata folder is displayed](../media/03-adf_choosestudents.jpg "Select the NutritionData.json file")
 
-1. Un-check **Copy file recursively** or **Binary Copy** if they are checked. Also ensure that other fields are empty. Click **Next**
+1. **再帰的に実行** と **バイナリコピー** のチェックを外します。 他のフィールドは空欄して、**次へ**を選択します。
 
     ![The input file or folder dialog is displayed](../media/03-adf_source_next.jpg "Ensure all other fields are empty, select next")
 
-1. Select the file format as **JSON format**. Then select **Next**.
+1. ファイル形式は**JSON**を選択します。他は何も変更せずに**次へ**を選択します。
 
     !["The file format settings dialog is displayed"](../media/03-adf_source_dataset_format.jpg "Ensure JSON format is selected, then select Next")
 
-1. You have now successfully connected the Blob Storage container with the nutrition.json file as the source.
-
-1. For the **Destination data store** add the Cosmos DB target data store by selecting **Create new connection** and selecting **Azure Cosmos DB (SQL API)**.
+1. これで、NutirationData.jsonをソースとするBLOBストレージコンテナーへの接続が正常に作成されました。
+1. **コピー先データストア**で**新しい接続の作成**を選択し、ポップアップ上で**Azure Cosmos DB for NoSQL**を選択してCosmos DBへの接続を追加します。
 
     !["The New Linked Service dialog is displayed"](../media/03-adf_selecttarget.jpg "Select the Azure Cosmos DB service type")
 
-1. Name the linked service **targetcosmosdb** and select your Azure subscription and Cosmos DB account. You should also select the Cosmos DB **ImportDatabase** that you created earlier.
+1. 名前を**targetcosmosdb**と入力し、アカウントの選択でこのラボで使用しているサブスクリプションとCosmos DBアカウントを選択します。データベース名は、**ImportData**を選択します。
 
     !["The linked service configuration dialog is displayed"](../media/03-adf_selecttargetdb.jpg "Select the ImportDatabase database")
 
-1. Select your newly created **targetcosmosdb** connection as the Destination data store.
+1. **作成**を選択します。
+
+1. 作成した**targetcosmosdb**を接続に指定します。
 
     !["The destination data source dialog is displayed"](../media/03-adf_destconnectionnext.jpg "Select your recently created data source")
 
-1. Select your **FoodCollection** container from the drop-down menu. You will map your Blob storage file to the correct Cosmos DB container. Select **Next** to continue.
+1. ターゲットのドロップダウンリストで**FoodCollection**を選択します。**次へ**を選択します。
 
     !["The table mapping dialog is displayed"](../media/03-adf_correcttable.jpg "Select the FoodCollection container")
 
-1. There is no need to change any `Settings`. Select **next**.
+1. `設定`は何も変更をせずに、**次へ**を選択します。
 
     !["The settings dialog is displayed"](../media/03-adf_settings.jpg "Review the dialog, select next")
 
-1. Select **Next** to begin deployment After deployment is complete, select **Monitor**.
+1. 概要を確認して**次へ**を選択します。パイプラインのデプロイが完了したら、**モニター**を選択します。
 
     !["The pipeline runs are displayed"](../media/03-adf_progress.jpg "Notice the pipeline is In progress")
 
-1. After a few minutes, refresh the page and the status for the ImportNutrition pipeline should be listed as **Succeeded**.
+1. パイプラインの実行には数分かかります。数分待って、**最新の情報に更新**を選択し、完了後に状態が**成功**となっていることを確認します。
 
     !["The pipeline runs are displayed"](../media/03-adf_progress_complete.jpg "The pipeline has succeeded")
 
-1. Once the import process has completed, close the ADF. You will now proceed to validate your imported data.
+1. インポートが完了したら、ADFを閉じることができます。次に、インポートしたデータの検証に進みます。
 
-## Validate Imported Data
+## インポートしたデータの検証
 
-The Azure Cosmos DB Data Explorer allows you to view documents and run queries directly within the Azure Portal. In this exercise, you will use the Data Explorer to view the data stored in our container.
+Azure Cosmos DB データ エクスプローラーを使用すると、ドキュメントを表示し、Azure ポータル内で直接クエリを実行できます。この演習では、データ エクスプローラーを使用して、コンテナーに格納されているデータを表示します。
 
-You will validate that the data was successfully imported into your container using the **Items** view in the **Data Explorer**.
+**データエクスプローラー**の**Items**ビューを使用して、データがコンテナーに正常にインポートされたことを検証します。
 
-1. Return to the **Azure Portal** (<http://portal.azure.com>).
+1. **Azure Portal** (<http://portal.azure.com>)に戻ります。
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. ポータルの左側で**Resource groups**リンクを選択します。
 
     ![Resource groups link is highlighted](../media/03-resource_groups.jpg "Select your resource group")
 
-1. In the **Resource groups** blade, locate and select the **cosmoslabs** resource group.
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
     ![The Lab resource group is highlighted](../media/03-lab_resource_group.jpg "Select the resource group")
 
-1. In the **cosmoslabs** blade, select the **Azure Cosmos DB** account you recently created.
+1. **cosmoslabs**ブレードで、作成されている**Azure Cosmos DB**を選択します。
 
     ![The Cosmos DB resource is highlighted](../media/03-cosmos_resource.jpg "Select the Cosmos DB resource")
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+1. **Azure Cosmos DB**ブレードで、左側にある**データエクスプローラー**リンクを見つけて選択します。
 
     ![The Data Explorer link was selected and is blade is displayed](../media/03-data_explorer_pane.jpg "Select Data Explorer")
 
-1. In the **Data Explorer** section, expand the **ImportDatabase** database node and then expand the **FoodCollection** container node.
+1. 右側に表示された**データエクスプローラー**内で、**ImportDatabase**データベースのノードを展開し、**FoodCollection**コンテナーのノードを展開します。
 
     ![The Container node is displayed](../media/03-collection_node.jpg "Expand the ImportDatabase node")
 
-1. Within the **FoodCollection** node, select the **Scale and Settings** link to view the throughput for the container. Reduce the throughput to **400 RU/s**.
+1. **FoodCollection**ノード内で、**Scale and Settings**リンクを選択してコンテナーのスループットを表示します。スループットの値を**400 RU/s**に減らします。
 
     ![Scale and Settings](../media/03-collection-settings.png "Reduce throughput")
 
-1. Within the **FoodCollection** node, select the **Items** link to view a subset of the various documents in the container. Select a few of the documents and observe the properties and structure of the documents.
+1. **FoodCollection**ノード内で、**Items**リンクを選択して、コンテナー内のさまざまなドキュメントのサブセットを表示します。いくつかのドキュメントを選択し、ドキュメントのプロパティと構造を確認します。
 
     ![Items is highlighted](../media/03-documents.jpg "Select Items")
 
     ![An Example document is displayed](../media/03-example_document.jpg "Select a document")
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
