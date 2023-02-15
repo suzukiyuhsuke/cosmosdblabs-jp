@@ -4,48 +4,6 @@
 
 > ラボ コンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。これにより、ラボ全体で使用する Azure Cosmos DB データベースとコンテナーが作成されます。また、**Azure データ ファクトリ**(ADF) リソースを使用して、既存のデータをコンテナーにインポートすることもできます。
 
-## Azure Cosmos DB データベースとコンテナーを作成する
-
-Azure Cosmos DB アカウント内にデータベースとコンテナーを作成します。
-
-1. [Azure Portal](https://portal.azure.com)に移動します。
-
-1. ポータルの左側で**Resource groups**リンクを選択します。
-
-    ![Resource groups is highlighted](../media/03-resource_groups.jpg "Select the Resource Groups")
-
-1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
-
-    ![The cosmoslabs resource group is highlighted](../media/03-lab_resource_group.jpg "Select the cosmoslabs resource group")
-　
-    > [アカウントのセットアップ](00-account_setup.md)で異なるリソースグループ名を指定した場合は、そのリソースグループ名を使用してください。
-
-1. **cosmoslabs**ブレードで、作成されている**Azure Cosmos DB**を選択します。
-
-    ![The Cosmos DB resource is highlighted](../media/03-cosmos_resource.jpg "Select the cosmoslabs resource")
-
-1. **Azure Cosmos DB**ブレードで、左側にある**概要**リンクを見つけて選択します。右側のペインで上部にある**コンテナーの追加**ボタンを選択します。
-
-    ![Add container link is highlighted](../media/03-add_collection.jpg "Add a new container")
-
-1. **コンテナーの追加**ポップアップで、以下の操作を実行します。　
-
-    1. **Database id**フィールドで**Create new**オプションを選択し、**ImportDatabase**を`Database id`に指定します。
-
-    2. **Share throughput across containers**オプションをオフにします。
-
-        > **Share throughput across containers**をオンにすると、そのデータベースに属するすべてのコンテナー間でスループットが共有されます。**Azure Cosmos DB**データベース内には、スループットを共有するコンテナーのセットと、専用のスループットを持つコンテナーを含めることができます。
-
-    3. **Container Id**フィールドには、**FoodCollection**を入力します。
-
-    4. **Partition key**フィールドには``/foodGroup``を入力します。
-
-    5. **Throughput**フィールドには、``11000``を入力します。 *註: データのインポート後に、この値は400RU/sに変更します。*
-
-    6. **OK**ボタンを選択します。
-
-1. 新しい**データベース**と**コンテナー**の作成が完了するのを待って、次の手順に進みます。
-
 ## ラボデータをコンテナーにインポートする
 
 **Azure Data Factory (ADF)**を使用して、**nutrition.json**ファイルに格納されているJSONデータをAzure Blob Storageからインポートします。
@@ -123,7 +81,7 @@ Azure Cosmos DB アカウント内にデータベースとコンテナーを作�
 
     !["The New Linked Service dialog is displayed"](../media/03-adf_selecttarget.jpg "Select the Azure Cosmos DB service type")
 
-1. 名前を**targetcosmosdb**と入力し、アカウントの選択でこのラボで使用しているサブスクリプションとCosmos DBアカウントを選択します。データベース名は、**ImportData**を選択します。
+1. 名前を**targetcosmosdb**と入力し、アカウントの選択でこのラボで使用しているサブスクリプションとCosmos DBアカウントを選択します。データベース名は、**NutritionDatabase**を選択します。
 
     !["The linked service configuration dialog is displayed"](../media/03-adf_selecttargetdb.jpg "Select the ImportDatabase database")
 
