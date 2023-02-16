@@ -379,7 +379,7 @@ To create a container, you must specify a name and a partition key path. A parti
 1. `Main`メソッド内で`InitalizeContainer()`メソッドを見つけ、`LoadFoodAndBeverage()`メソッドを呼び出す次のコードを追加します。
 
     ```csharp
-    await LoadFoodAndBeverageAsync(container);
+    await LoadFoodAndBeverage(container);
     ```
 
 1. `Main`メソッドの記述は以下のようになります。
