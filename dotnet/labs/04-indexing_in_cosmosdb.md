@@ -1,49 +1,49 @@
-# Indexing in Azure Cosmos DB
+# Azure Cosmos DBでのインデックス作成
 
-In this lab, you will modify the indexing policy of an Azure Cosmos DB container. You will explore how you can optimize indexing policy for write or read heavy workloads as well as understand the indexing requirements for different SQL API query features.
+このラボでは、Azure Cosmos DB コンテナーのインデックス作成ポリシーを変更します。書き込みまたは読み取り負荷の高いワークロードのインデックス作成ポリシーを最適化する方法と、さまざまな SQL API クエリ機能のインデックス作成要件について説明します。
 
-> If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
+> これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-## Indexing Overview
+## インデックス作成の概要
 
-Azure Cosmos DB is a schema-agnostic database that allows you to iterate on your application without having to deal with schema or index management. By default, Azure Cosmos DB automatically indexes every property for all items in your container without the need to define any schema or configure secondary indexes. If you chose to leave indexing policy at the default settings, you can run most queries with optimal performance and never have to explicitly consider indexing. However, if you want control over adding or removing properties from the index, modification is possible through the Azure Portal, ARM template, PowerShell, Azure CLI or any Cosmos DB SDK.
+Azure Cosmos DB はスキーマに依存しないデータベースであり、スキーマやインデックスの管理を処理することなく、アプリケーションを反復処理できます。既定では、Azure Cosmos DB は、スキーマを定義したり、セカンダリ インデックスを構成したりしなくても、コンテナー内のすべての項目のすべてのプロパティに自動的にインデックスを付けます。インデックス作成ポリシーを既定の設定のままにすることを選択した場合は、ほとんどのクエリを最適なパフォーマンスで実行でき、インデックス作成を明示的に検討する必要はありません。ただし、インデックスのプロパティの追加または削除を制御する場合は、Azure Portal、ARM テンプレート、PowerShell、Azure CLI、または任意の Cosmos DB SDK を使用して変更できます。
 
-Azure Cosmos DB uses an inverted index, representing your data in a tree form. For a brief introduction on how this works, read our [indexing overview](https://docs.microsoft.com/en-us/azure/cosmos-db/index-overview) before continuing with the lab.
+Azure Cosmos DB では、データをツリー形式で表す転置インデックスが使用されます。このしくみの簡単な概要については、ラボを続行する前に[インデックス作成の概要](https://docs.microsoft.com/en-us/azure/cosmos-db/index-overview)をお読みください。
 
-## Customizing the indexing policy
+## インデックス作成ポリシーのカスタマイズ
 
-In this lab section, you will view and modify the indexing policy for your **FoodCollection**.
+このラボセクションでは、**FoodCollection**のインデックス作成ポリシーを表示および変更します。
 
-### Open Data Explorer
+### データエクスプローラーを開く
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. Azureポータルの左側で、**Resource groups**を選択します。
 
-2. In the **Resource groups** blade, locate and select the **cosmoslabs** resource group.
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
-3. In the **cosmoslabs** blade, select your **Azure Cosmos DB** account.
+3. **cosmoslabs**ブレードで、**Azure Cosmos DB**アカウントを選択します。
 
-4. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+4. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-5. In the **Data Explorer** section, expand the **NutritionDatabase** database node and then expand the **FoodCollection** container node.
+5. **データエクスプローラー** セクションで**NutritionDatabase**データベースノードを展開して、さらに**FoodCollection**コンテナーノードを展開します。
 
-6. Within the **FoodCollection** node, select the **Items** link.
+6. **FoodCollection**ノードで、**Items**リンクを選択します。
 
-7. View the items within the container. Observe how these documents have many properties, including arrays. If we do not use a particular property in the WHERE clause, ORDER BY clause, or a JOIN, indexing the property does not provide any performance benefit.
+7. コンテナー内の項目を表示します。これらのドキュメントに配列を含む多くのプロパティがあることを確認します。WHERE 句、ORDER BY 句、または JOIN で特定のプロパティを使用しない場合、プロパティのインデックスを作成してもパフォーマンス上の利点はありません。
 
-8. Still within the **FoodCollection** node, select the **Scale & Settings** link.
-9. Review the **Indexing Policy** section
+8. Still within the  node, select the  link.引き続き**FoodCollection**ノード内で、**Scale & Settings**リンクを選択します。
+9. **Indexing Policy**セクションを確認する。
 
-    - Notice you can edit the JSON file that defines your container's index
-    - An Indexing policy can also be modified through any Azure Cosmos DB SDK as well as ARM template, PowerShell or Azure CLI
-    - During this lab we will modify the indexing policy through the Azure Portal
+    - コンテナーのインデックスを定義する JSON ファイルを編集できることに注意してください。
+    - インデックス作成ポリシーは、任意の Azure Cosmos DB SDK および ARM テンプレート、PowerShell、または Azure CLI を使用して変更することもできます。
+    - このラボでは、Azure ポータルを使用してインデックス作成ポリシーを変更します。
 
    ![The Indexing Policy window is highlighted](../media/04-indexingpolicy-initial.jpg "Review the indexing policy of the FoodCollection")
 
-### Including and excluding Indexes
+### インデックスの包含と除外
 
-Instead of including an index on every property by default, you can chose to either include or exclude specific paths from the index. Let's go through some simple examples (no need to enter these into the Azure Portal, we can just review them here).
+既定ですべてのプロパティにインデックスを含める代わりに、インデックスに特定のパスを含めるか除外するかを選択できます。いくつかの簡単な例を見てみましょう (Azure ポータルに入力する必要はなく、ここで確認できます)。
 
-Within the **FoodCollection**, documents have this schema (some properties were removed for simplicity):
+**FoodCollection**内では、ドキュメントに次のスキーマがあります (わかりやすくするために一部のプロパティが削除されています)。
 
 ```json
 {
@@ -79,7 +79,7 @@ Within the **FoodCollection**, documents have this schema (some properties were 
 }
 ```
 
-If you wanted to only index the manufacturerName, foodGroup, and nutrients array, you should define the following index policy. In this example, we use the wildcard character `*` to indicate that we would like to index all paths within the nutrients array.
+manufacturerName、foodGroup、およびnutrientsの配列のみをインデックス化する場合は、次のインデックス ポリシーを定義する必要があります。この例では、ワイルドカード文字`*`を使用して、nutrients配列内のすべてのパスにインデックスを付けることを示します。
 
 ```json
 {
@@ -104,9 +104,9 @@ If you wanted to only index the manufacturerName, foodGroup, and nutrients array
 }
 ```
 
-However, it's possible we may just want to index the nutritionValue of each array element.
+ただし、各配列要素の nutritionValue にインデックスを付けるだけにすることもできます。
 
-In this next example, the indexing policy would explicitly specify that the nutritionValue path in the nutrition array should be indexed. Since we don't use the wildcard character `*`, no additional paths in the array are indexed.
+次の例では、インデックス作成ポリシーで、nutrition配列の nutritionValueパスにインデックスを付ける必要があることを明示的に指定します。配列に対してワイルドカード文字`*`を使用しないため、配列内の追加のパスにはインデックスが付けられません。
 
 ```json
 {
@@ -131,41 +131,41 @@ In this next example, the indexing policy would explicitly specify that the nutr
 }
 ```
 
-Finally, it's important to understand the difference between the `*` and `?` characters.
+最後に、`*`と`?`の違いを理解することが重要です
 
-The `*` character indicates that Azure Cosmos DB should index every path beyond that specific node.
+`*`は、Azure Cosmos DB がその特定のノードを超えるすべてのパスにインデックスを付ける必要があることを示します。
 
-The `?` character indicates that Azure Cosmos DB should index no further paths beyond this node.
+`?`は、Azure Cosmos DB でこのノードを超えるパスのインデックスを作成しないことを示します。
 
-In the above example, there are no additional paths under nutritionValue. If we were to modify the document and add a path here, having the wildcard character `*`  in the above example would ensure that the property is indexed without explicitly mentioning the name.
+上記の例では、nutritionValueの下に追加のパスはありません。ドキュメントを変更してここにパスを追加する場合、上記の例でワイルドカード文字を使用すると、名前を明示的に指定せずにプロパティのインデックスが作成されます。
 
-### Understand query requirements
+### クエリ要件を理解する
 
-Before modifying indexing policy, it's important to understand how the data is used in the collection.
+インデックス作成ポリシーを変更する前に、コレクションでデータがどのように使用されるかを理解することが重要です。
 
-If your workload is write-heavy or your documents are large, you should only index necessary paths. This will significantly decrease the amount of RU's required for inserts, updates, and deletes.
+ワークロードが書き込み負荷が高い場合、またはドキュメントが大きい場合は、必要なパスのみをインデックス化する必要があります。これにより、挿入、更新、および削除に必要な RU の量が大幅に減少します。
 
-Let's imagine that the following queries are the only read operations that are executed on the **FoodCollection** container.
+次のクエリが、**FoodCollection**コンテナーで実行される読み取り操作のすべてであると想像してみましょう。
 
-**Query #1**
+**クエリ#1**
 
 ```sql
 SELECT * FROM c WHERE c.manufacturerName = <manufacturerName>
 ```
 
-**Query #2**
+**クエリ#2**
 
 ```sql
 SELECT * FROM c WHERE c.foodGroup = <foodGroup>
 ```
 
-These queries only require an index be defined on **manufacturerName** and **foodGroup**. We can modify the indexing policy to index only these properties.
+これらのクエリでは、**manufacturerName**と**foodGroup**でインデックスを定義するだけで済みます。インデックス作成ポリシーを変更して、これらのプロパティのみにインデックスを付けることができます。
 
-### Edit the indexing policy by including paths
+### パスを含めてインデックス作成ポリシーを編集する
 
-1. In the Azure Portal, navigate back to the **FoodCollection** container
-2. Select the **Scale & Settings** link
-3. In the **Indexing Policy** section, replace the existing json file with the following:
+1. Azureポータルでデータエクスプローラーを使い、**FoodCollection**を開きます。
+2. **Scale & Settings**リンクを選択します。
+3. **Indexing Policy**セクションで、既存の json ファイルを次のように置き換えます。
 
     ```json
     {
@@ -187,46 +187,46 @@ These queries only require an index be defined on **manufacturerName** and **foo
     }
     ```
 
-    > This new indexing policy will create an index on only the manufacturerName and foodGroup properties. It will remove indexes on all other properties.
+    > この新しいインデックス作成ポリシーは、manufacturerNameとfoodGroupのプロパティのみにインデックスを作成します。他のすべてのプロパティのインデックスが削除されます。
 
-4. Select **Save**. Azure Cosmos DB will update the index in the container, using your excess provisioned throughput to make the updates.
+4. **Save**を選択します。Azure Cosmos DB によってコンテナー内のインデックスが更新され、プロビジョニングされた超過スループットを使用して更新が行われます。
 
-    > During the container re-indexing, write performance is unaffected. Queries run during the index update will not use the new index policy until it has been rebuilt.
+    > コンテナーのインデックスの再作成中、書き込みパフォーマンスは影響を受けません。インデックスの更新中に実行されるクエリは、再構築されるまで新しいインデックス ポリシーを使用しません。
 
-5. In the menu, select the **New SQL Query** icon.
-6. Paste the following SQL query and select **Execute Query**:
+5. メニューで、**New SQL Query**アイコンを選択します。
+6. 次の SQL クエリを貼り付け、**Execute Query**を選択します。
 
     ```sql
     SELECT * FROM c WHERE c.manufacturerName = "Kellogg, Co."
     ```
 
-7. Navigate to the **Query Stats** tab. You should observe that this query still has a low RU charge, even after removing some properties from the index. Because the **manufacturerName** was the only property used as a filter in the query, it was the only index that was required.
+7. **Query Stats**タブに移動します。このクエリの RU 料金は、インデックスから一部のプロパティを削除した後でも低いことに注意してください。**manufacturerName**はクエリでフィルターとして使用される唯一のプロパティであったため、必要な唯一のインデックスでした。
 
     ![Query metrics are displayed for the previous query](../media/04-querymetrics_01.JPG "Review the query metrics")
 
-8. Replace the query text with the following and select **Execute Query**:
+8. クエリテキストを次のように置き換え、**Execute Query**を選択します。
 
     ```sql
     SELECT * FROM c WHERE c.description = "Bread, blue corn, somiviki (Hopi)"
     ```
 
-9. Observe that this query has a very high RU charge even though only a single document is returned. This is because no index is currently defined for the `description` property.
+9. このクエリでは、1 つのドキュメントしか返されないにもかかわらず、非常に高い RU 料金が発生することに注意してください。これは、`description`プロパティにインデックスが現在定義されていないためです。
 
-10. Observe the **Query Metrics**:
+10. **Query Stats**を確認します。
 
     ![Query metrics are displayed for the previous query](../media/04-querymetrics_02.JPG "Review the query metrics")
 
-    > If a query does not use the index, the **Index hit document count** will be 0. We can see above that the query needed to retrieve 8,618 documents and ultimately ended up only returning 1 document.
+    > クエリでインデックスを使用しない場合、**Index hit document count**は0になります。上記のように、クエリは8,618のドキュメントを取得する必要があり、最終的には1つのドキュメントしか返さなかったことがわかります。
 
-### Edit the indexing policy by excluding paths
+### パスを除外してインデックス作成ポリシーを編集する
 
-In addition to manually including certain paths to be indexed, you can exclude specific paths. In many cases, this approach can be simpler since it will allow all new properties in your document to be indexed by default. If there is a property that you are certain you will never use in your queries, you should explicitly exclude this path.
+インデックスを作成する特定のパスを手動で含めるだけでなく、特定のパスを除外することもできます。多くの場合、この方法は、ドキュメント内のすべての新しいプロパティに既定でインデックスを作成できるため、より簡単です。クエリで決して使用しないことが確実なプロパティがある場合は、このパスを明示的に除外する必要があります。
 
-We will create an indexing policy to index every path except for the **description** property.
+**description**プロパティを除くすべてのパスにインデックスを付けるインデックス作成ポリシーを作成します。
 
-1. Navigate back to the **FoodCollection** in the Azure Portal
-2. Select the **Scale & Settings** link
-3. In the **Indexing Policy** section, replace the existing json file with the following:
+1. Azureポータルでデータエクスプローラーを使い、**FoodCollection**を開きます。
+2. **Scale & Settings**リンクを選択します。
+3. **Indexing Policy**セクションで、既存の json ファイルを次のように置き換えます。
 
     ```json
     {
@@ -245,50 +245,50 @@ We will create an indexing policy to index every path except for the **descripti
     }
     ```
 
-    > This new indexing policy will create an index on every property **except** for the description.
+    > この新しいインデックス作成ポリシーは、descriptionを**除外した**すべてのプロパティにインデックスを作成します。
 
-4. Select **Save**. Azure Cosmos DB will update the index in the container, using your excess provisioned throughput to make the updates.
+4. **Save**を選択します。Azure Cosmos DBによってコンテナー内のインデックスが更新され、プロビジョニングされた超過スループットを使用して更新が行われます。
 
-    > During the container re-indexing, write performance is unaffected. Queries run during the index update will not use the new index policy until it has been rebuilt.
+    > コンテナーのインデックスの再作成中、書き込みパフォーマンスは影響を受けません。インデックスの更新中に実行されるクエリは、再構築されるまで新しいインデックスポリシーを使用しません。
 
-5. After defining the new indexing policy, navigate to your **FoodCollection** and select the **Add New SQL Query** icon. Paste the following SQL query and select **Execute Query**:
+5. 新しいインデックス作成ポリシーを定義したら、**FoodCollection**に移動し、**Add New SQL Query**アイコンを選択します。次のSQLクエリを貼り付け、**Execute Query**を選択します。
 
     ```sql
     SELECT * FROM c WHERE c.manufacturerName = "Kellogg, Co."
     ```
 
-6. Navigate to the **Query Stats** tab. You should observe that this query still has a low RU charge since manufacturerName is indexed.
+6. **Query Stats**タブに移動します。manufacturerNameにインデックスが作成されるため、このクエリの RU料金はまだ低いことに注意してください。
 
-7. Replace the query text with the following and select **Execute Query**:
+7. クエリ テキストを次のように置き換え、**Execute Query**を選択します。
 
     ```sql
     SELECT * FROM c WHERE c.description = "Bread, blue corn, somiviki (Hopi)"
     ```
 
-8. Observe that this query has a very high RU charge even though only a single document is returned. This is because the `description` property is explicitly excluded in the indexing policy.
+8. このクエリでは、1 つのドキュメントしか返されないにもかかわらず、非常に高い RU 料金が発生することに注意してください。これは、`description`プロパティがインデックス作成ポリシーで明示的に除外されているためです
 
-## Adding a Composite Index
+## 複合インデックスの追加
 
-For ORDER BY queries that order by multiple properties, a composite index is required. A composite index is defined on multiple properties and must be manually created.
+複数のプロパティで並べ替える ORDER BY クエリの場合は、複合インデックスが必要です。複合インデックスは複数のプロパティで定義され、手動で作成する必要があります。
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
-2. In the **Data Explorer** section, expand the **NutritionDatabase** database node and then expand the **FoodCollection** container node.
-3. Select the icon to add a **New SQL Query**.
-4. Paste the following SQL query and select **Execute Query**
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
+2. **データエクスプローラー** セクションで**NutritionDatabase**データベースノードを展開して、さらに**FoodCollection**コンテナーノードを展開します。
+3. メニューで、**New SQL Query**アイコンを選択します。
+4. 次の SQL クエリを貼り付け、**Execute Query**を選択します。
 
     ```sql
     SELECT * FROM c ORDER BY c.foodGroup ASC, c.manufacturerName ASC
     ```
 
-    > This query will fail with the following error:
+    > このクエリは、次のエラーで失敗します。
 
     ```sql
     "The order by query does not have a corresponding composite index that it can be served from."
     ```
 
-    > In order to run a query that has an ORDER BY clause with one property, the default index is sufficient. Queries with multiple properties in the ORDER BY clause require a composite index.
+    > 1 つのプロパティを持つ ORDER BY 句を持つクエリを実行するには、既定のインデックスで十分です。ORDER BY 句に複数のプロパティがあるクエリには、複合インデックスが必要です。
 
-5. Still within the **FoodCollection** node, select the **Scale & Settings** link. In the **Indexing Policy** section, you will add a composite index.
+5. Still within the  node, select the  link. In the  section, you will add a composite index.引き続き**FoodCollection**ノード内で、**Scale & Settings**リンクを選択します。**Indexing Policy**[スケールと設定] セクションで、複合インデックスを追加します。
 
 6. Replace the **Indexing Policy** with the following text:
 
@@ -327,23 +327,22 @@ For ORDER BY queries that order by multiple properties, a composite index is req
     }
     ```
 
-7. **Save** this new indexing policy. The update should take approximately 10-15 seconds to apply to your container.
+7. **Save**を選択して、 この新しいインデックス作成ポリシーを保存します。更新プログラムがコンテナーに適用されるまでに約 10 秒から 15 秒かかります。
+    > このインデックス作成ポリシーは、次のORDER BYクエリを許可する複合インデックスを定義します。これらのそれぞれを、**データエクスプローラー**の既存の開いているクエリタブで実行してテストします。複合インデックスでプロパティの順序を定義する場合、プロパティはORDER BY句の順序と完全に一致するか、いずれの場合も反対の値である必要があります。
 
-    > This indexing policy defines a composite index that allows for the following ORDER BY queries. Test each of these by running them in your existing open query tab in the **Data Explorer**. When you define the order for properties in a composite index, they must either exactly match the order in the ORDER BY clause or be, in all cases, the opposite value.
-
-8. Run the following queries.
+8. 次のクエリを実行します。
 
     ```sql
     SELECT * FROM c ORDER BY c.foodGroup ASC, c.manufacturerName ASC
     ```
 
-9. Run the following query, which the current composite index does not support.
+9. 現在の複合インデックスでサポートされていない次のクエリを実行します。
 
     ```sql
     SELECT * FROM c ORDER BY c.foodGroup DESC, c.manufacturerName ASC
     ```
 
-10. This query will not run without an additional composite index. Modify the indexing policy to include an additional composite index.
+10. このクエリは、追加の複合インデックスがないと実行できません。インデックス作成ポリシーを変更して、追加の複合インデックスを含めます。
 
     ```json
     {
@@ -390,50 +389,50 @@ For ORDER BY queries that order by multiple properties, a composite index is req
     }
     ```
 
-11. Re-run the query, it should succeed.
+11. クエリを再実行すると、成功するはずです。
 
-> [Learn more about defining composite indexes](https://docs.microsoft.com/en-us/azure/cosmos-db/how-to-manage-indexing-policy#composite-indexing-policy-examples).
+> [複合インデックスの定義の詳細については、こちらを参照してください。](https://docs.microsoft.com/azure/cosmos-db/how-to-manage-indexing-policy#composite-indexing-policy-examples).
 
-## Adding a spatial index
+## 空間インデックスの追加
 
-### Create a new container with volcano data
+### 火山データを含む新しいコンテナーを作成する
 
-Azure Cosmos DB supports querying of data in the GeoJSON format. During this lab, you will upload sample data to this container that is specified in this format. This volcano.json sample data is a better fit for geo-spatial queries than our existing nutrition dataset. The dataset contains the coordinates and basic information for many volcanoes around the world.
+Azure Cosmos DBでは、GeoJSON形式でのデータのクエリがサポートされています。このラボでは、この形式で指定されたこのコンテナーにサンプルデータをアップロードします。このvolcano.jsonサンプル データは、既存の栄養データセットよりも地理空間クエリに適しています。データセットには、世界中の多くの火山の座標と基本情報が含まれています。
 
-First, you will create a new Cosmos container named volcanoes inside a new database.
+まず、新しいデータベース内にvolcanoesという名前の新しいCosmosコンテナーを作成します。
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-2. Select the icon to add a **New Container**
+2. **New Container**アイコンを選択して、新しいコンテナーを追加します
 
-3. In the **Add Container** popup, perform the following actions:
+3. **Add Container**ポップアップで、次の操作を実行します。
 
-   - In the **Database id** field, select the **Create new** option and enter the value **VolcanoDatabase**.
+   - **Database id**フィールドで、**Create new**オプションを選択し、値として**VolcanoDatabase**を入力します。
 
-   - Ensure the **Provision database throughput** option is not selected.
+   - **Share throughput across containers**オプションをオフにします。
 
-      > Provisioning throughput for a database allows you to share the throughput among all the containers that belong to that database. Within an Azure Cosmos DB database, you can have a set of containers which shares the throughput as well as containers, which have dedicated throughput.
+      > **Share throughput across containers**をオンにすると、そのデータベースに属するすべてのコンテナー間でスループットが共有されます。**Azure Cosmos DB**データベース内には、スループットを共有するコンテナーのセットと、専用のスループットを持つコンテナーを含めることができます。
 
-   - In the **Container Id** field, enter the value **VolcanoContainer**.
+   - **Container Id**フィールドには、**VolcanoContainer**を入力します。
 
-   - In the **Partition key** field, enter the value ``/Country``.
+   - **Partition key**フィールドには、``/Country``を入力します。
 
-   - In the **Throughput** field, enter the value ``5000``.
+   - **Throughput**フィールドには、``5000``を入力します。
 
-   - Select the **OK** button.
+   - **OK**ボタンを選択します。
 
-### Upload Sample Data
+### サンプルデータのアップロード
 
-1. Navigate to the **VolcanoesContainer** in the Azure Portal
-2. Select the **Items** section
-3. Select **Upload Item**
-4. In the popup, navigate to the [VolcanoData.json](../setup/VolcanoData.json) file. This file was copied in the pre-lab steps, if you do not have it run the account setup steps.
-5. Select **Upload**
+1. Azure ポータルで**VolcanoesContainer**に移動する。
+2. **Items**セクションを選択します。
+3. **Upload Item**を選択します。
+4. ポップアップで[VolcanoData.json](../setup/VolcanoData.json)ファイルを選択します。
+5. **Upload**を選択します。
 
-### Create geo-spatial indexes in the **Volcanoes** container
+### **Volcanoes**コンテナーでの地理空間インデックスの作成
 
-1. Select the **Scale & Settings** link.
-2. In the **Indexing Policy** section, replace the existing json file with the following:
+1. **Scale & Settings**リンクを選択します。
+2. **Indexing Policy**セクションで、既存のjsonファイルを次のように置き換えます。
 
     ```json
     {
@@ -463,15 +462,15 @@ First, you will create a new Cosmos container named volcanoes inside a new datab
     }
     ```
 
-> Geo-spatial indexing is by default, disabled. This indexing policy will turn on geo-spatial indexing for all possible GeoJSON types which include Points, Polygons, MultiPolygon, and LineStrings. Similar to range indexes and composite indexes, there are no precision settings for geo-spatial indexes.
+> 地理空間インデックス作成は、既定では無効になっています。このインデックス作成ポリシーは、ポイント、ポリゴン、マルチポリゴン、ラインストリングを含むすべての可能な GeoJSON タイプの地理空間インデックスを有効にします。範囲インデックスや複合インデックスと同様に、地理空間インデックスの精度設定はありません。
 
-[Learn more about querying geo-spatial data in Azure Cosmos DB](https://docs.microsoft.com/en-us/azure/cosmos-db/geospatial#introduction-to-spatial-data).
+[Azure Cosmos DB での地理空間データのクエリの詳細については、こちらを参照してください。](https://docs.microsoft.com/en-us/azure/cosmos-db/geospatial#introduction-to-spatial-data).
 
-### Query the Volcano Data
+### Volcano Dataのクエリ
 
-1. Navigate back to the **VolcanoesContainer** in the Azure Portal
-2. Select the **New SQL Query**.
-3. Paste the following SQL query and select **Execute Query**.
+1. Azure ポータルで**VolcanoesContainer**に移動する。
+2. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
+3. 以下のクエリを貼り付け、**Execute Query**でクエリを実行します。
 
     ```sql
     SELECT *
@@ -484,21 +483,22 @@ First, you will create a new Cosmos container named volcanoes inside a new datab
     AND v["Last Known Eruption"] = "Last known eruption from 1800-1899, inclusive"
     ```
 
-    > This query returns all the Stratovolcanoes that last erupted between 1800 and 1899 that are within 100 km of the coordinates (122.19, 47.36). These are the coordinates of Redmond, WA.
+    > このクエリは、座標(-122.19, 47.36)から100km 以内にある1800年から1899年の間に最後に噴火したすべての成層火山を返します。座標はワシントン州レドモンドの座標です。
 
-4. Observe the **Query Stats** for this operation. Because the container has a geo-spatial index for Points, this query consumed a small amount of RU's.
+
+4. **Query Stats**を確認します。コンテナーには Points の地理空間インデックスがあるため、このクエリでは少量の RU が消費されました。
 
     ![Query metrics are displayed for the previous query](../media/04-querymetrics_geo.jpg "Review the query metrics")
 
-### Query sample polygon data
+### サンプルPolygonデータのクエリ
 
-If you specify points within a Polygon in a counter-clockwise order, you will define the area within the coordinates as the polygon area. A Polygon specified in clockwise order represents the inverse of the region within it.
+Polygon内のポイントを反時計回りに指定する場合は、座標内の領域をPolygonの領域として定義します。時計回りに指定された Polygonは、その領域を除外した領域を表します。
 
-We can explore this concept through sample queries.
+この概念は、サンプルクエリを通じて調べることができます。
 
-1. Navigate back to the **VolcanoesContainer** in the Azure Portal
-2. Select the **New SQL Query**.
-3. Paste the following SQL query and select **Execute Query**.
+1. Azure ポータルで**VolcanoesContainer**に移動する。
+2. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
+3. 以下のクエリを貼り付け、**Execute Query**でクエリを実行します。
 
     ```sql
     SELECT *
@@ -515,9 +515,9 @@ We can explore this concept through sample queries.
         })
     ```
 
-4. Review the results, in this case, there are 8 volcanoes located within this rectangle.
+4. 結果を確認してください、この場合、この領域の中に8つの火山があります。
 
-5. In the *Query Editor* replace the text with the following query:
+5. *クエリエディター*で、テキストを次のクエリに置き換えます。
 
     ```sql
     SELECT *
@@ -534,20 +534,20 @@ We can explore this concept through sample queries.
         })
     ```
 
-6. Review the results, you should now see many items returned. There are thousands of volcanoes located outside our small rectangle region.
+6. 結果を確認すると、多くのアイテムが返されていることがわかります。指定した領域の外側に何千もの火山があります。
 
-> When creating a GeoJSON polygon, whether it be inside a query or item, the order of the coordinates specified matters. Azure Cosmos DB will not reject coordinates that indicate the inverse of a polygon's shape. In addition, GeoJSON requires that you specify coordinates in the format: (longitude, latitude).
+> GeoJSON polygonを作成する場合、それがクエリ内であろうとアイテム内であろうと、指定された座標の順序が重要です。Azure Cosmos DB では、多角形の形状のを除外する座標は拒否されません。さらに、GeoJSON では、(経度、緯度) の形式で座標を指定する必要があります。
 
-## Lab Cleanup
+## クリーンアップ
 
-### Restoring the **FoodCollection** Indexing Policy
+### **FoodCollection**インデックス作成ポリシーの復元
 
-You should restore the **FoodCollection** indexing policy to the default setting where all paths are indexed.
+**FoodCollection** インデックス作成ポリシーを、すべてのパスにインデックスが作成されるデフォルト設定に復元する必要があります。
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
-2. In the **Data Explorer** section, expand the **NutritionDatabase** database node and then expand the **FoodCollection** container node.
-3. Within the **FoodCollection** node, select the **Scale & Settings** link. 
-4. In the **Indexing Policy** section, replace the existing JSON file with the following:
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
+2. **データエクスプローラー** セクションで**NutritionDatabase**データベースノードを展開して、さらに**FoodCollection**コンテナーノードを展開します。
+3. **FoodCollection**ノード内で、**Scale & Settings**リンクを選択します。
+4. **Indexing Policy**セクションで、既存の json ファイルを次のように置き換えます。
 
     ```json
     {
@@ -566,15 +566,15 @@ You should restore the **FoodCollection** indexing policy to the default setting
     }
     ```
 
-5. Select **Save** to apply these changes. This Indexing Policy is the same Indexing Policy as when we began the lab and is required for subsequent labs.
+5. **Save**を選択して、これらの変更を適用します。このインデックス作成ポリシーは、ラボを開始したときと同じインデックス作成ポリシーであり、後続のラボで必要です。
 
-### Delete the **VolcanoContainer**
+### **VolcanoContainer**を削除する
 
-You will not need the **VolcanoContainer** during additional lab sections. You can delete this container now. Or otherwise reduce it's RU/s to 400 RU/s.
+以降のラボでは、**VolcanoContainer**は必要ありません。このコンテナーは今すぐ削除できます。それ以外の場合は、RU/秒を 400 RU/秒に減らします。
 
-1. Navigate to the **Data Explorer**
-2. Select the three dots near your **VolcanoContainer**. From the menu, select **Delete Container**.
-3. Confirm the container's name and delete the container.
-4. Close your browser window. You have now completed the indexing lab section.
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
+2. **VolcanoContainer**の右にあるオプション``...``を選択して、メニューから**Delete Container**を選択します。
+3. コンテナーの名前を確認し、コンテナーを削除します。
+4. ブラウザー ウィンドウを閉じます。これで、インデックス作成の実習セクションは完了です。
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。

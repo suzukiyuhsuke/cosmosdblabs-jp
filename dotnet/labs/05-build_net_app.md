@@ -1,74 +1,78 @@
-# Build A Simple .NET Console App
+# .NETコンソールアプリの作成
 
 After using the Azure Portal's **Data Explorer** to query an Azure Cosmos DB container in Lab 3, you are now going to use the .NET SDK to issue similar queries.
+ラボ3では、Azureポータル上で**データエクスプローラー**を使用してAzure Cosmos DBコンテナーに対してクエリを実行しました。本ラボでは、.NET SDKを利用して同様のクエリを発行します。
 
-> If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
+> これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-## Create a .NET Core Project
+## .NET Coreプロジェクトを作成する
 
-1. On your local machine, locate the CosmosLabs folder in your `Documents` folder
-2. Open the `Lab05` folder that will be used to contain the content of your .NET Core project. If you are completing this lab through Microsoft Hands-on Labs, the CosmosLabs folder will be located at the path: **C:\labs\CosmosLabs**
+1. ローカルマシン上で、`ドキュメント`内のCosmosLabsフォルダーを開きます。
 
-3. In the `Lab05` folder, right-click the folder and select the **Open with Code** menu option.
+2. `Lab05`フォルダーを開きます。
+
+3. `Lab05`フォルダー内で、右クリックから**Open with Code**を選んでVisual Studio Codeを開きます。
 
    ![Open with Visual Studio Code](../media/03-open_with_code.jpg)
 
-   > Alternatively, you can run a terminal in your current directory and execute the `code .` command.
+   > 現在のディレクトリでターミナルを実行して、`code .`コマンドを入力することもできます。
 
-4. In the Visual Studio Code window that appears, right-click the **Explorer** pane and select the **Open in Terminal** menu option.
+4. 開いたVisual Studio Codeのウィンドウで、左側の**Explorer**ペインを右クリックし、**Open in Terminal**メニューを選択します。
 
    ![Open in Terminal](../media/open_in_terminal.jpg)
 
-5. In the terminal pane, enter and execute the following command:
+   > もしくはショートカット`Ctrl+Shift+@`でもターミナルを開くことができます。
+
+5. ターミナルペインで、以下のコマンドを実行します。
 
    ```sh
    dotnet restore
    ```
 
-   > This command will restore all packages specified as dependencies in the project.
+   > このコマンドを実行すると、プロジェクト内の依存関係として指定されたすべてのパッケージを復元します。
 
-6. In the terminal pane, enter and execute the following command:
+6. ターミナルペインで、以下のコマンドを実行します。
 
    ```sh
    dotnet build
    ```
 
-   > This command will build the project.
+   > このコマンドを実行すると、プロジェクトがビルドされます。
 
-7. In the **Explorer** pane verify that you have a `DataTypes.cs` file in your project folder.
+7. **Explorer**ペインで、プロジェクト内に`DataTypes.cs`ファイルが存在することを確認します。
 
-   > This file contains the data classes you will be working with in the following steps.
+   > このファイルには、次の手順で使用するで＾多クラスが含まれています。
 
-8. Select the `Program.cs` link in the **Explorer** pane to open the file in the editor.
+8. **Explorer**ペインで`Program.cs`ファイルを選択して、エディターで開きます。
 
    ![Visual Studio Code editor is displayed with the program.cs file highlighted](../media/03-program_editor.jpg "Open the program.cs file")
 
-9. For the `_endpointUri` variable, replace the placeholder value with the **URI** value and for the `_primaryKey` variable, replace the placeholder value with the **PRIMARY KEY** value from your Azure Cosmos DB account. Use [these instructions](00-account_setup.md) to get these values if you do not already have them:
+9. 以前のラボでメモしていたAzure Cosmos DBの資格情報から、`_endpointUri`変数の値に、**URI**を、`_primaryKey`変数の値に**プライマリーキー**を入力してください。資格情報が不明な場合は、[こちら](00-account_setup.md)の手順を参照してください。
 
-    - For example, if your **uri** is `https://cosmosacct.documents.azure.com:443/`, your new variable assignment will look like this:
+    - > 例として **uri** が `https://cosmosacct.documents.azure.com:443/` の場合、記述は以下のようになります
 
     ```csharp
     private static readonly string _endpointUri = "https://cosmosacct.documents.azure.com:443/";
     ```
 
-    - For example, if your **primary key** is `elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==`, your new variable assignment will look like this:
+    - 例として **プライマリキー** が ``elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==`` の場合、記述は以下のようになります。
 
     ```csharp
     private static readonly string _primaryKey = "elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==";
     ```
 
-## Read a single Document in Azure Cosmos DB Using ReadItemAsync
+## ReadItemAsyncを使用してAzure Cosmos DBで単一のドキュメントを読み取る
 
-ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In Azure Cosmos DB, this is the most efficient method of reading a single document.
+ReadItemAsyncを使用すると、そのIDによって1つの項目をCosmos DBから取得できます。Azure Cosmos DBでは、これが1つのドキュメントを読み取る最も効率的な方法です。
 
-1. Locate the following code within the `Main()` method:
+1. `Main()`メソッド内で以下のコードを見つけます。
 
     ```csharp
     Database database = _client.GetDatabase(_databaseId);
     Container container = database.GetContainer(_containerId);
     ```
 
-1. Add the following lines of code to use the `ReadItemAsync()` function to retrieve a single item from your Cosmos DB by its `id` and write its description to the console.
+1. 次のコードを追加して、`ReadItemAsync()`関数を使用してCosmos DBから`id`に該当する項目を取得し、その`Description`プロパティをコンソールに出力します。
 
     ```csharp
     ItemResponse<Food> candyResponse = await container.ReadItemAsync<Food>("19130", new PartitionKey("Sweets"));
@@ -76,39 +80,39 @@ ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In 
     Console.Out.WriteLine($"Read {candy.Description}");
     ```
 
-1. Save all of your open tabs in Visual Studio Code
+1. 開いているエディターの内容を全て保存します。
 
-1. In the open terminal pane, enter and execute the following command:
+1. ターミナルペインで以下のコマンドを入力して実行します。
 
    ```sh
    dotnet run
    ```
 
-1. You should see the following line output in the console, indicating that `ReadItemAsync()` completed successfully:
+1. コンソールに次の行出力が表示され、`ReadItemAsync()`が正常に完了したことが示されます。 
 
    ```sh
    Read Candies, HERSHEY''S POT OF GOLD Almond Bar
    ```
 
-## Execute a Query Against a Single Azure Cosmos DB Partition
+## 単一の Azure Cosmos DB パーティションに対してクエリを実行する
 
-1. Return to `program.cs` file editor window
+1. エディタ上の`program.cs`ファイルに戻ります。
 
-1. Find the last line of code you wrote:
+1. コードの最終行を見つけます。以下の記述です。
 
     ```csharp
     Console.Out.WriteLine($"Read {candy.Description}");
     ```
 
-1. Create a SQL Query against your data, as follows:
+1. 次のように、データに対するクエリを作成します。
 
     ```csharp
     string sqlA = "SELECT f.description, f.manufacturerName, f.servings FROM foods f WHERE f.foodGroup = 'Sweets' and IS_DEFINED(f.description) and IS_DEFINED(f.manufacturerName) and IS_DEFINED(f.servings)";
     ```
 
-    > This query will select all food where the foodGroup is set to the value `Sweets`. It will also only select documents that have description, manufacturerName, and servings properties defined. You'll note that the syntax is very familiar if you've done work with SQL before. Also note that because this query has the partition key in the WHERE clause, this query can execute within a single partition.
+    > このクエリは、foodGroupが`Sweets`に設定されているすべてのデータを選択します。また、description、manufacturerName、およびservingsのプロパティが定義されているドキュメントのみが選択されます。この構文は、以前に SQL を使用したことがある場合は、非常に馴染みがあることに気付くでしょう。また、このクエリのWHERE句にはパーティションキーが含まれているため、このクエリは1つのパーティション内で実行できます。
 
-1. Add the following code to execute and read the results of this query
+1. 次のコードを追加して、このクエリを実行して結果を読み取ります。
 
    ```csharp
    FeedIterator<Food> queryA = container.GetItemQueryIterator<Food>(new QueryDefinition(sqlA), requestOptions: new QueryRequestOptions{MaxConcurrency = 1});
@@ -123,15 +127,15 @@ ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In 
    }
    ```
 
-1. Save all of your open tabs in Visual Studio Code
+1. 開いているエディターの内容を全て保存します。
 
-1. In the open terminal pane, enter and execute the following command:
+1. ターミナルペインで以下のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. The code will loop through each result of the SQL query and output a message to the console similar to the following:
+1. このコードは、SQL クエリの各結果をループ処理し、次のようなメッセージをコンソールに出力します。
 
     ```sh
     ...
@@ -143,25 +147,25 @@ ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In 
     ...
     ```
 
-### Execute a Query Against Multiple Azure Cosmos DB Partitions
+### 複数の Azure Cosmos DB パーティションに対してクエリを実行する
 
-1. Return to `program.cs` file editor window
+1. エディタ上の`program.cs`ファイルに戻ります。
 
-2. Following your `foreach` loop, create a SQL Query against your data, as follows:
+2. F`foreach`ループの下に、次のようにデータに対する SQL クエリを作成します。
 
     ```csharp
     string sqlB = @"SELECT f.id, f.description, f.manufacturerName, f.servings FROM foods f WHERE IS_DEFINED(f.manufacturerName)";
     ```
 
-3. Add the following line of code after the definition of `sqlB` to create your next item query:
+3. `sqlB`の定義の後に次のコード行を追加して、次のアイテム クエリを作成します。
 
     ```csharp
     FeedIterator<Food> queryB = container.GetItemQueryIterator<Food>(sqlB, requestOptions: new QueryRequestOptions{MaxConcurrency = 5, MaxItemCount = 100});
     ```
 
-    > Take note of the differences in this call to `GetItemQueryIterator()` as compared to the previous section. **MaxConcurrency** is set to `5`. MaxConcurrency Sets the maximum number of simultaneous network connections to the container's partitions. If you set this property to -1, the SDK manages the degree of parallelism. If the MaxConcurrency set to 0, there is a single network connection to the container's partitions. MaxItemCount trades query latency versus client-side memory utilization. If this option is omitted or to set to -1, the SDK manages the number of items buffered during parallel query execution. We are limiting the **MaxItemCount** to `100` items. This will result in paging if there are more than 100 items that match the query.
+    > 前のセクションと比較したこの呼び出しの違いに注意してください。**MaxConcurrency**は5に設定されます。MaxConcurrencyはコンテナーのパーティションへの同時ネットワーク接続の最大数を設定します。このプロパティを-1に設定すると、SDKによって並列処理の数を管理します。MaxConcurrencyが0に設定されている場合、コンテナーのパーティションへのネットワーク接続は1つです。**MaxItemCount**は、クエリの待機時間とクライアント側のメモリ使用率をトレードします。このオプションを省略するか、-1に設定すると、SDKが並列クエリの実行中にバッファリングされるアイテムの数を管理します。記述したクエリではMaxItemCountを100アイテムに制限しています。これにより、クエリに一致するアイテムが100個を超えると、ページングが発生します。
 
-4. Add the following lines of code to page through the results of this query using a while loop.
+4. 次のコード行を追加して、while ループを使用してこのクエリの結果をページングします。
 
     ```csharp
     int pageCount = 0;
@@ -175,15 +179,15 @@ ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In 
     }
     ```
 
-5. Save all of your open tabs in Visual Studio Code
+5. 開いているエディターの内容を全て保存します。
 
-6. In the open terminal pane, enter and execute the following command:
+6. ターミナルペインで以下のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-7. You should see a number of new results, each separated by the a line indicating the page.  Note that the results are coming from multiple partitions:
+7. いくつかの新しい結果が表示され、それぞれがページを示す行で区切られます。結果は複数のパーティションから取得されていることに注意してください。
 
     ```sql
         [19067] Candies, TWIZZLERS CHERRY BITES Hershey Food Corp.
@@ -191,4 +195,4 @@ ReadItemAsync allows a single item to be retrieved from Cosmos DB by its ID. In 
         [14644] Beverages, , PEPSICO QUAKER, Gatorade G2, low calorie   Quaker Oats Company - The Gatorade Company,  a unit of Pepsi Co.
     ```
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
