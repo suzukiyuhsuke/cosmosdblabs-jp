@@ -1,30 +1,30 @@
-# Authoring Azure Cosmos DB Stored Procedures for Multi-Document Transactions
+# 複数ドキュメントトランザクション用の Azure Cosmos DB ストアドプロシージャの作成
 
-In this lab, you will author and execute multiple stored procedures within your Azure Cosmos DB instance. You will explore features unique to JavaScript stored procedures such as throwing errors for transaction rollback, logging using the JavaScript console and implementing a continuation model within a bounded execution environment.
+このラボでは、Azure Cosmos DBインスタンス内で複数のストアドプロシージャを作成して実行します。トランザクションロールバックのためのエラーのスロー、JavaScriptコンソールを使用したログ記録、制限された実行環境内での継続モデルの実装（トランザクション管理）など、JavaScriptストアドプロシージャに固有の機能について説明します。
 
-> If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
+> これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-## Author Simple Stored Procedures
+## 単純なストアドプロシージャの作成
 
-You will get started in this lab by authoring simple stored procedures that implement common server-side tasks such as adding one or more items as part of a database transaction.
+このラボでは、データベース トランザクションの一部として1つ以上の項目を追加するなど、一般的なサーバー側タスクを実装する単純なストアドプロシージャを作成することから始めます。
 
-> **Note** During the following steps, if you are not able to edit a query or stored procedure, move away from the **Data Explorer** window and then re-open it.
+> **註** 次の手順でクエリまたはストアドプロシージャを編集できない場合は、**データエクスプローラー**ウィンドウから移動し、再度開きます。
 
-### Create Simple Stored Procedure
+### 単純なストアドプロシージャの作成
 
-1. In the **Azure Cosmos DB** blade in the Azure Portal, locate and select the **Data Explorer** link on the left side of the blade.
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-1. In the **Data Explorer** section, expand the **NutritionDatabase** database node and then expand the **FoodCollection** container node.
+1. **データエクスプローラー** セクションで**NutritionDatabase**データベースノードを展開して、さらに**FoodCollection**コンテナーノードを展開します。
 
-1. Within the **FoodCollection** node, select the **Items** link.
+1. **FoodCollection**ノードで、**Items**リンクを選択します。
 
-1. Select the **New Stored Procedure** button (two gears icon) at the top of the **Data Explorer** section.
+1. **データエクスプローラー**セクションの上部にある**New Stored Procedure**ボタン (2 つの歯車アイコン) を選択します。
 
     ![The New Stored Procedure menu item is highlighted](../media/06-new_storedprocedure.jpg "Create a new Stored Procedure")
 
-1. In the stored procedure tab, locate the **Stored Procedure Id** field and enter the value: **greetCaller**.
+1. ストアドプロシージャタブで、**Stored Procedure Id**フィールドを見つけ、**greetCaller**を入力します。
 
-1. Replace the contents of the stored procedure editor textarea with the following JavaScript code:
+1. ストアドプロシージャエディターのテキスト領域の内容を次の JavaScript コードに置き換えます。
 
     ```js
     function greetCaller(name) {
@@ -36,37 +36,39 @@ You will get started in this lab by authoring simple stored procedures that impl
 
     ![A new stored procedure called greetCaller is displayed](../media/06-new_greet_caller_sp.jpg "Create a new stored procedure")
 
-    > This simple stored procedure will echo the input parameter string with the text `Hello` as a prefix.
+    > この単純なストアドプロシージャは、`Hello`をプレフィックスとして入力パラメーター文字列をエコーします。
 
-1. Select the **Save** button at the top of the tab.
+1. タブの上部にある **Save**ボタンを選択します。
+> **註**: Saveボタンがアクティブになっていないばあいは、**Stored Procedure Id**フィールドにマウスカーソルを併せて、テキストボックス内で値の変更操作をしてみてください。（例：１文字消去して、再度入力するなど）
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: `example`.
+    - In the  section, use Type  and enter the value: .
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`example`を入力します。
 
-    - If there are no param fields listed, select the **Add New Param** button.
+    - パラメーターフィールドが一覧に表示されない場合は、**Add New Param**ボタンを選択します。
 
-    - In the param field, use Type **String** and enter the value: `Person`.
+    - パラメーターフィールドで、**Type**を**String**にし、Valueとして`Person`を入力します。
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
         ![The stored procedure parameters are populated](../media/06-execute_sp.jpg "Execute the stored procedure")
 
-1. In the **Result** pane at the bottom of the tab, observe the results of the stored procedure's execution.
+1. タブの下部にある**Result**ウィンドウで、ストアドプロシージャの実行結果を確認します。
 
-    > The output should be `"Hello Person"`.
+    > 出力は次のようになります。`"Hello Person"`
 
-### Create Stored Procedure with Nested Callbacks
+### ネストされたコールバックを持つストアドプロシージャの作成
 
-All Azure Cosmos DB operations within a stored procedure are asynchronous and depend on JavaScript function callbacks. A **callback function** is a JavaScript function that is used as a parameter to another JavaScript function. In the context of Azure Cosmos DB, the callback function has two parameters, one for the error object in case the operation fails, and one for the created object.
+ストアド プロシージャ内のすべての Azure Cosmos DB 操作は非同期であり、JavaScript 関数コールバックに依存します。**コールバック関数**は、別の JavaScript 関数のパラメーターとして使用される JavaScript関数です。Azure Cosmos DBのコンテキストでは、コールバック関数には2つのパラメーターがあり、1つは操作が失敗した場合のエラーオブジェクト用、もう1つは作成されたオブジェクト用です。
 
-1. Select the **New Stored Procedure** button at the top of the **Data Explorer** section.
+1. **データエクスプローラー**セクションの上部にある**New Stored Procedure**ボタン (2 つの歯車アイコン) を選択します。
 
-1. In the stored procedure tab, locate the **Stored Procedure Id** field and enter the value: **createDocument**.
+1. ストアドプロシージャタブで、**Stored Procedure Id**フィールドを見つけ、**createDocument**を入力します。
 
-1. Replace the contents of the stored procedure editor textarea with the following JavaScript code:
+1. ストアドプロシージャエディターのテキスト領域の内容を次の JavaScript コードに置き換えます。
 
     ```js
     function createDocument(doc) {
@@ -84,55 +86,55 @@ All Azure Cosmos DB operations within a stored procedure are asynchronous and de
     }
     ```
 
-1. Review the stored procedures code. Notice inside the JavaScript callback, users can either handle the exception or throw an error. In case a callback is not provided and there is an error, the Azure Cosmos DB runtime throws an error. This stored procedures creates a new item and uses a nested callback function to return the item as the body of the response.
+1. ストアド プロシージャのコードを確認します。JavaScript コールバック内では、ユーザーが例外を処理するか、エラーをスローできることに注意してください。コールバックが指定されておらず、エラーが発生した場合、Azure Cosmos DB ランタイムはエラーをスローします。このストアド プロシージャは、新しい項目を作成し、入れ子になったコールバック関数を使用して、項目を応答の本文として返します。
 
-1. Select the **Save** button at the top of the tab.
+1. タブの上部にある **Save**ボタンを選択します。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: `My Recipes`.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`My Recipes`を入力します。
 
-    - If there are no param fields listed, select the **Add New Param** button.
+    - パラメーターフィールドが一覧に表示されない場合は、**Add New Param**ボタンを選択します。
 
-    - In the param field, use Type **String** and enter the value:
+    - パラメーターフィールドで、**Type**を**String**にし、Valueとして以下のjsonを入力します。
 
         ```json
         { "foodGroup": "My Recipes", "description": "Cookies" }
         ```
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe the results of the stored procedure's execution.
+1. タブの下部にある**Result**ウィンドウで、ストアドプロシージャの実行結果を確認します。
 
     ![The item created from the stored procedure is displayed](../media/06-execute_sp_02.jpg "review the item created")
 
-    > You should see a new item in your container. Azure Cosmos DB has assigned additional fields to the item such as `id` and `_etag`.
+    > コンテナーに新しい項目が表示されます。Azure Cosmos DB では、項目に追加のフィールド（`id`、`_etag`）が割り当てられています。
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+5. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
 
-1. In the query tab, replace the contents of the *query editor* with the following SQL query:
+1. クエリタブで、クエリエディターの内容を次の SQL クエリに置き換えます。
 
     ```sql
     SELECT * FROM foods WHERE foods.foodGroup = "My Recipes" AND foods.description = "Cookies"
     ```
 
-    > This query will retrieve the item you have just created.
+    > このクエリは、作成したばかりのアイテムを取得します。
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-1. In the **Results** pane, observe the results of your query.
+1. **Results**ウィンドウで、クエリの結果を確認します。
 
-1. Close the **Query** tab.
+1. **Query**タブを閉じます。
 
-### Create Stored Procedure with Logging
+### ログを出力するストアドプロシージャの作成
 
-1. Select the **New Stored Procedure** button at the top of the **Data Explorer** section.
+1. **データエクスプローラー**セクションの上部にある**New Stored Procedure**ボタン (2 つの歯車アイコン) を選択します。
 
-1. In the stored procedure tab, locate the **Stored Procedure Id** field and enter the value: **createDocumentWithLogging**.
+1. ストアドプロシージャタブで、**Stored Procedure Id**フィールドを見つけ、**createDocumentWithLogging**を入力します。
 
-1. Replace the contents of the stored procedure editor with the following JavaScript code:
+1. ストアドプロシージャエディターのテキスト領域の内容を次の JavaScript コードに置き換えます。
 
     ```js
     function createDocumentWithLogging(doc) {
@@ -155,41 +157,42 @@ All Azure Cosmos DB operations within a stored procedure are asynchronous and de
     }
     ```
 
-    > This stored procedure will use the **console.log** feature that's normally used in browser-based JavaScript to write output to the console. In the context of Azure Cosmos DB, this feature can be used to capture diagnostics logging information that can be returned after the stored procedure is executed.
+    > このストアドプロシージャは、コンソールに出力を書き込むためにブラウザーベースのJavaScriptで通常使用される**console.log**機能を使用します。Azure Cosmos DBのコンテキストでは、この機能を使用して、ストアドプロシージャの実行後に返される診断ログ情報をキャプチャできます。
 
-1. Select the **Save** button at the top of the tab.
+1. タブの上部にある **Save**ボタンを選択します。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: ``My Recipes``.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`My Recipes`を入力します。
 
-    - Select the **Add New Param** button.
+    - パラメーターフィールドが一覧に表示されない場合は、**Add New Param**ボタンを選択します。
 
-    - In the new field that appears, enter the value:
+    - パラメーターフィールドで、**Type**を**String**にし、Valueとして以下のjsonを入力します。
 
         ```json
         { "foodGroup": "My Recipes", "description": "Cookies" }
         ```
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe the results of the stored procedure's execution.
 
-    > You should see the unique id of a new item in your container.
+1. タブの下部にある**Result**ウィンドウで、ストアドプロシージャの実行結果を確認します
 
-1. Select the `console.log` link in the **Result** pane to view the log data for your stored procedure execution.
+    > コンテナー内の新しい項目の一意の ID が表示されます。
 
-    > You can see that the procedural components of the stored procedure finished first and then the callback function was executed once the item was created. This can help you understand the asynchronous nature of JavaScript callbacks.
+1. **Result**ウィンドウの`console.log`リンクを選択して、ストアドプロシージャ実行のログデータを表示します。
 
-### Create Stored Procedure with Callback Functions
+    > ストアドプロシージャのプロシージャ コンポーネントが最初に終了し、項目が作成されるとコールバック関数が実行されたことがわかります。これは、JavaScript コールバックの非同期性を理解するのに役立ちます。
 
-1. Select the **New Stored Procedure** button at the top of the **Data Explorer** section.
+### コールバック関数を使用したストアドプロシージャの作成
 
-1. In the stored procedure tab, locate the **Stored Procedure Id** field and enter the value: **createDocumentWithFunction**.
+1. **データエクスプローラー**セクションの上部にある**New Stored Procedure**ボタン (2 つの歯車アイコン) を選択します。
 
-1. Replace the contents of the *stored procedure editor* with the following JavaScript code:
+1. ストアドプロシージャタブで、**Stored Procedure Id**フィールドを見つけ、**createDocumentWithFunction**を入力します。
+
+1. ストアドプロシージャエディターのテキスト領域の内容を次の JavaScript コードに置き換えます。
 
     ```js
     function createDocumentWithFunction(document) {
@@ -204,73 +207,75 @@ All Azure Cosmos DB operations within a stored procedure are asynchronous and de
     }
     ```
 
-    > This is the same stored procedure as you created previously but it is using a named function instead of an implicit callback function inline.
+    > これは以前に作成したものと同じストアドプロシージャですが、暗黙的なコールバック関数の代わりに名前付き関数をインラインで使用しています。
 
-1. Select the **Save** button at the top of the tab.
+1. タブの上部にある **Save**ボタンを選択します。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: `Packaged Foods`.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`Packaged Foods`を入力します。
 
-    - Select the **Add New Param** button.
+    - パラメーターフィールドが一覧に表示されない場合は、**Add New Param**ボタンを選択します。
 
-    - In the new field that appears, enter the value:
+    - パラメーターフィールドで、**Type**を**String**にし、Valueとして以下のjsonを入力します。
 
         ```json
         { "foodGroup": "My Recipes" }
         ```
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe that the stored procedure execution has failed.
+1. タブの下部にある**Result**ウィンドウで、ストアド プロシージャの実行が失敗したことを確認します。
 
-    > Stored procedures are bound to a specific partition key. In this example, we tried to execute the stored procedure within the context of the **Packaged Foods** partition key. Within the stored procedure, we tried to create a new item using the **My Recipes** partition key. The stored procedure was unable to create a new item (or access existing items) in a partition key other than the one specified when the stored procedure is executed. This caused the stored procedure to fail. You are not able to create or manipulate items across partition keys within a stored procedure.
+    > ストアドプロシージャは、特定のパーティションキーにバインドされます。この例では、**Packaged Foods**パーティションキーのコンテキスト内でストアドプロシージャを実行しようとしました。ストアドプロシージャ内で、**My Recipes**パーティションキーを使用して新しい項目を作成しようとしました。ストアドプロシージャは、ストアドプロシージャの実行時に指定されたパーティションキー以外のパーティションキーに新しい項目を作成 (または既存の項目にアクセス) できませんでした。これにより、ストアドプロシージャが失敗しました。ストアドプロシージャ内のパーティションキー間で項目を作成または操作することはできません。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    1. In the **Partition key value** section, use Type **String** and enter the value: ``Packaged Foods``.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`Packaged Foods`を入力します。
 
-    2. Select the **Add New Param** button.
+    - パラメーターフィールドが一覧に表示されない場合は、**Add New Param**ボタンを選択します。
 
-    3. In the new field that appears, enter the value:
+    - パラメーターフィールドで、**Type**を**String**にし、Valueとして以下のjsonを入力します。
 
         ```json
         { "foodGroup": "Packaged Foods" }
         ```
 
-    4. Select the **Execute** button.
+    4. **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe the results of the stored procedure's execution.
+1. タブの下部にある**Result**ウィンドウで、ストアドプロシージャの実行結果を確認します
 
-    > You should see a new item in your container. Azure Cosmos DB has assigned additional fields to the item such as ``id`` and ``_etag``.
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+    > コンテナーに新しい項目が表示されます。Azure Cosmos DB では、項目に追加のフィールド（`id`、`_etag`）が割り当てられています。
 
-1. In the query tab, replace the contents of the query editor with the following SQL query:
+1. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
+
+1. クエリタブで、クエリエディターの内容を次の SQL クエリに置き換えます。
 
     ```sql
     SELECT * FROM foods WHERE foods.foodGroup = "Packaged Foods"
     ```
 
-    > This query will retrieve the item you have just created.
+    > このクエリは、作成したばかりのアイテムを取得します。
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-1. In the **Results** pane, observe the results of your query.
+1. **Results**ウィンドウで、クエリの結果を確認します。
 
-1. Close the **Query** tab.
+1. **Query**タブを閉じます。
 
-### Create Stored Procedure with Error Handling
+### エラー処理を使用したストアドプロシージャの作成
 
-1. Select the **New Stored Procedure** button at the top of the **Data Explorer** section.
+1. **データエクスプローラー**セクションの上部にある**New Stored Procedure**ボタン (2 つの歯車アイコン) を選択します。
 
-1. In the stored procedure tab, locate the **Stored Procedure Id** field and enter the value: **createTwoDocuments**.
+1. ストアドプロシージャタブで、**Stored Procedure Id**フィールドを見つけ、**createTwoDocuments**を入力します。
 
-1. Replace the contents of the stored procedure editor with the following JavaScript code:
+
+1. ストアドプロシージャエディターのテキスト領域の内容を次のJavaScriptコードに置き換えます。
 
     ```js
     function createTwoDocuments(foodGroupName, foodDescription, mealName) {
@@ -305,31 +310,31 @@ All Azure Cosmos DB operations within a stored procedure are asynchronous and de
     }
     ```
 
-    > This stored procedure uses nested callbacks to create two separate items. You may have scenarios where your data is split across multiple JSON documents and you will need to add or modify multiple items in a single stored procedure.
+    > このストアドプロシージャは、入れ子になったコールバックを使用して2つの個別の項目を作成します。データが複数のJSONドキュメントに分割され、1つのストアドプロシージャで複数の項目を追加または変更する必要があるシナリオがある場合があります。
 
-1. Select the **Save** button at the top of the tab.
+1. タブの上部にある **Save**ボタンを選択します。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: `Vitamins`.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`Vitamins`を入力します。
 
-    - Select the **Add New Param** button two times.
+    - **Add New Param**ボタンを 2 回選択します。
 
-    - In the first field that appears, enter the value: `Vitamins`.
+    - 表示される最初のフィールドに、`Vitamins`を入力します。
 
-    - In the second field that appears, enter the value: `Calcium`.
+    - 表示される 2 番目のフィールドに、`Calcium`を入力します。
 
-    - In the third field that appears, enter the value: `Breakfast`.
+    - 表示される 3 番目のフィールドに、`Breakfast`を入力します。
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe the results of the stored procedure's execution.
+1. タブの下部にある**Result**ウィンドウで、ストアドプロシージャの実行結果を確認します。
 
-    > You should see new items in your container. Azure Cosmos DB has assigned additional fields to the items such as `id` and `_etag`.
+    > コンテナーに新しい項目が表示されます。Azure Cosmos DB では、項目に追加のフィールド（`id`、`_etag`）が割り当てられています。
 
-1. Replace the contents of the stored procedure editor with the following JavaScript code:
+1. ストアドプロシージャエディターのテキスト領域の内容を次の JavaScript コードに置き換えます。
 
     ```js
     function createTwoDocuments(foodGroupName, foodDescription, mealName) {
@@ -366,48 +371,48 @@ All Azure Cosmos DB operations within a stored procedure are asynchronous and de
     }
     ```
 
-    - Transactions are deeply and natively integrated into Cosmos DB’s JavaScript programming model.
-    - Inside a JavaScript function, all operations are automatically wrapped under a single transaction.
-    - If the JavaScript completes without any exception, the operations to the database are committed.
+    - トランザクションは、Cosmos DBのJavaScriptプログラミングモデルに深くネイティブに統合されています。
+    - JavaScript 関数内では、すべての操作が1つのトランザクションに自動的にラップされます。
+    - JavaScriptが例外なく完了すると、データベースに対する操作がコミットされます。
 
-We are going to change the stored procedure to put in a different foodGroup name for the second item. This should cause the stored procedure to fail since the second item uses a different partition key. If there is any exception that’s propagated from the script, Cosmos DB’s JavaScript runtime will roll back the whole transaction. This will effectively ensure that the first or second items are not committed to the database.
+ストアドプロシージャを変更して、2番目の項目に別のfoodGroup名を入力します。これにより、2番目の項目が別のパーティションキーを使用するため、ストアドプロシージャが失敗します。スクリプトから伝達された例外がある場合、Cosmos DBのJavaScriptランタイムはトランザクション全体をロールバックします。これにより、1番目または2 番目の項目がデータベースにコミットされないことが効果的に保証されます。
 
-1. Select the **Update** button at the top of the tab.
+1. タブの上部にある **Update**ボタンを選択します。
 
-1. Select the **Execute** button at the top of the tab.
+1. タブの上部にある **Execute**ボタンを選択します。
 
-1. In the **Input parameters** popup that appears, perform the following actions:
+1. 表示される **Input parameters**ポップアップで、次の操作を実行します。
 
-    - In the **Partition key value** section, use Type **String** and enter the value: `Junk Food`.
+    - **Partition key value**セクションで、**Type**を**String**にし、Valueとして`Junk Food`を入力します。
 
-    - Select the **Add New Param** button until three param fields are listed.
+    - **Add New Param**ボタンを 2 回選択します。
 
-    - In the first field that appears, enter the value: `Junk Food`.
+    - 表示される最初のフィールドに、`Junk Food`を入力します。
 
-    - In the second field that appears, enter the value: `Chips`.
+    - 表示される 2 番目のフィールドに、`Chips`を入力します。
 
-    - In the third field that appears, enter the value: `Midnight Snack`.
+    - 表示される 3 番目のフィールドに、`Midnight Snack`を入力します。
 
-    - Select the **Execute** button.
+    - **Execute**ボタンを選択します。
 
-1. In the **Result** pane at the bottom of the tab, observe that the stored procedure execution has failed.
+1. タブの下部にある**Result**ウィンドウで、ストアド プロシージャの実行が失敗したことを確認します。
 
-    > This stored procedure failed to create the second item so the entire transaction was rolled back.
+    > このストアドプロシージャは 2 番目の項目の作成に失敗したため、トランザクション全体がロールバックされました。
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+1. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
 
-1. In the query tab, replace the contents of the query editor with the following SQL query:
+1. クエリタブで、クエリエディターの内容を次の SQL クエリに置き換えます。
 
     ```sql
     SELECT * FROM foods WHERE foods.foodGroup = "Junk Food"
     ```
 
-    > This query won't retrieve any items since the transaction was rolled back.
+    > このクエリでは、トランザクションがロールバックされてからアイテムは取得されません。
 
-1. Select the **Execute Query** button in the query tab to run the query. You should see only an empty array.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。空の配列のみが表示されます。
 
-1. In the **Results** pane, observe the results of your query.
+1. **Results**ウィンドウで、クエリの結果を確認します。
 
-1. Close the **Query** tab.
+1. **Query**タブを閉じます。
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
