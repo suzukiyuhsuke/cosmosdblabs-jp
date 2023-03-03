@@ -71,8 +71,8 @@ In addition to the above workshop decks, we have hands-on labs. We have labs ava
 - [ラボ3：Azure Cosmos DBでのクエリ](dotnet/labs/03-querying_in_azure_cosmosdb.md)
 - [ラボ4：Azure Cosmos DBでのインデックス作成](dotnet/labs/04-indexing_in_cosmosdb.md)
 - [ラボ5：.NETコンソールアプリの作成](dotnet/labs/05-build_net_app.md)
-- [ラボ6：複数のドキュメントにまたがったトランザクション](dotnet/labs/06-multi-document-transactions.md)*未訳*
-- [ラボ7：トランザクションの継続](dotnet/labs/07-transactions-with-continuation.md)*未訳*
+- [ラボ6：複数のドキュメントにまたがったトランザクション](dotnet/labs/06-multi-document-transactions.md)
+- [ラボ7：トランザクションの継続](dotnet/labs/07-transactions-with-continuation.md)
 - [ラボ8：変更フィードの概要](dotnet/labs/08-change_feed_with_azure_functions.md)*未訳*
 - [ラボ9：パフォーマンスのトラブルシューティング](dotnet/labs/09-troubleshooting-performance.md)*未訳*
 - [ラボ10：オプティミスティックな同時実行制御](dotnet/labs/10-concurrency-control.md)*未訳*
