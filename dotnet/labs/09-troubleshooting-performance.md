@@ -1,69 +1,69 @@
-# Troubleshooting Azure Cosmos DB Performance
+# Cosmos DBでのパフォーマンスのトラブルシューティング
 
-In this lab, you will use the .NET SDK to tune Azure Cosmos DB requests to optimize the performance and cost of your application.
+このラボでは、.NET SDK を使用して Azure Cosmos DBへのリクエストをチューニングし、アプリケーションのパフォーマンスとコストを最適化します。
 
-> If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
 
-## Create a .NET Core Project
+>  これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-1. On your local machine, locate the CosmosLabs folder in your Documents folder and open the `Lab09` folder that will be used to contain the content of your .NET Core project.
+## .NET Coreプロジェクトを作成する
 
-1. In the `Lab09` folder, right-click the folder and select the **Open with Code** menu option.
+1. ローカル コンピューターで、ドキュメントフォルダー内の CosmosLabsフォルダーを見つけ、.NET Coreプロジェクトのコンテンツを格納するために使用される`Lab09`フォルダーを開きます。
 
-    > Alternatively, you can run a terminal in your current directory and execute the ``code .`` command.
+1. `Lab09`フォルダで、フォルダを右クリックし、**Codeで開く**メニューオプションを選択します。
 
-1. In the Visual Studio Code window that appears, right-click the **Explorer** pane and select the **Open in Terminal** menu option.
+    > または、現在のディレクトリでターミナルを実行して``code .``コマンドを実行することもできます。
 
-1. In the terminal pane, enter and execute the following command:
+1. 表示される Visual Studio Code ウィンドウで、**エクスプローラー**ペインを右クリックし、**ターミナルで開く**メニューオプションを選択します。
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet restore
     ```
 
-    > This command will restore all packages specified as dependencies in the project.
+    > このコマンドは、プロジェクト内の依存関係として指定されたすべてのパッケージを復元します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet build
     ```
 
-    > This command will build the project.
+    > このコマンドはプロジェクトをビルドします。
 
-1. In the **Explorer** pane, select the **DataTypes.cs**
-1. Review the file, notice it contains the data classes you will be working with in the following steps.
+1. **エクスプローラー**ペインで、**DataTypes.cs**を選択します。
+1. ファイルを確認し、次の手順で使用するデータ クラスが含まれていることを確認します。
 
-1. Select the **Program.cs** link in the **Explorer** pane to open the file in the editor.
+1. **エクスプローラー**ペインで、**Program.cs**を選択します。
 
-1. For the ``_endpointUri`` variable, replace the placeholder value with the **URI** value and for the ``_primaryKey`` variable, replace the placeholder value with the **PRIMARY KEY** value from your Azure Cosmos DB account. Use [these instructions](00-account_setup.md) to get these values if you do not already have them:
+1. 以前のラボでメモしていたAzure Cosmos DBの資格情報から、`_endpointUri`変数の値に、**URI**を、`_primaryKey`変数の値に**プライマリーキー**を入力してください。資格情報が不明な場合は、[こちら](00-account_setup.md)の手順を参照してください。
 
-    - For example, if your **uri** is ``https://cosmosacct.documents.azure.com:443/``, your new variable assignment will look like this: 
+    - 例として **uri** が `https://cosmosacct.documents.azure.com:443/` の場合、記述は以下のようになります
 
     ```csharp
     private static readonly string _endpointUri = "https://cosmosacct.documents.azure.com:443/";
     ```
 
-    - For example, if your **primary key** is ``elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==``, your new variable assignment will look like this:
+    - 例として **プライマリキー** が ``elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==`` の場合、記述は以下のようになります。
 
     ```csharp
     private static readonly string _primaryKey = "elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==";
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet build
     ```
 
-## Examining Response Headers
+## レスポンスヘッダーの確認
 
-Azure Cosmos DB returns various response headers that can give you more metadata about your request and what operations occurred on the server-side. The .NET SDK exposes many of these headers to you as properties of the `ResourceResponse<>` class.
+Azure Cosmos Dは、リクエストとサーバー側で発生した操作に関するより多くのメタデータを提供できるさまざまなレスポンスヘッダーを返します。.NET SDKは、これらのヘッダーの多くを`ResourceResponse<>`クラスのプロパティとして公開します。
 
-### Observe RU Charge for Large Item
+### 大きなアイテムのRUを確認する
 
-1. Locate the following code within the `Main` method:
+1. `Main`メソッド内で次のコードを見つけます。
 
     ```csharp
 
@@ -73,23 +73,23 @@ Azure Cosmos DB returns various response headers that can give you more metadata
 
     ```
 
-1. After the last line of code, add a new line of code to call a new function we will create in the next step:
+1. コードの最後の行の後に、次の手順で作成する新しい関数を呼び出すための新しいコード行を追加します。
 
     ```csharp
     await CreateMember(peopleContainer);
     ```
 
-1. Next create a new function that creates a new object and stores it in a variable named `member`:
+1. 次に、新しいオブジェクトを作成し、 `member`という名前の変数に格納する新しい関数を作成します。
 
     ```csharp
-    private static async Task CreateMember(Container peopleContainer)
+    private static async Task<double> CreateMember(Container peopleContainer)
     {
         object member = new Member { accountHolder = new Bogus.Person() };
 
     }
     ```
 
-    > The **Bogus** library has a special helper class (`Bogus.Person`) that will generate a fictional person with randomized properties. Here's an example of a fictional person JSON document:
+    > **Bogus**ライブラリには、ランダムなプロパティを持つ架空の人物を生成する特別なヘルパークラス(`Bogus.Person`)があります。架空の人物のJSONドキュメントの例を次に示します。
 
     ```js
     {
@@ -121,20 +121,20 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     }
     ```
 
-1. Add a new line of code to invoke the **CreateItemAsync** method of the **Container** instance using the **member** variable as a parameter:
+1. **member**変数をパラメーターとして使用して、**Container**インスタンスの**CreateItemAsync**メソッドを呼び出す新しいコード行を追加します。
 
     ```csharp
     ItemResponse<object> response = await peopleContainer.CreateItemAsync(member);
     ```
 
-1. After the last line of code in the using block, add a new line of code to print out the value of the **RequestCharge** property of the **ItemResponse<>** instance and return the RequestCharge (we will use this value in a later exercise):
+1. ブロックの最後のコード行の後に、新しいコード行を追加して、**ItemResponse<>** インスタンスの **RequestCharge**プロパティの値を出力し、**RequestCharge**を返します (この値は後の演習で使用します)。
 
     ```csharp
     await Console.Out.WriteLineAsync($"{response.RequestCharge} RU/s");
     return response.RequestCharge;
     ```
 
-1. The `Main` and `CreateMember` methods should now look like this:
+1. `Main`メソッドと`CreateMember`メソッドは次のようになります。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -156,45 +156,45 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the results of the console project. You should see the document creation operation use approximately `15  RU/s`.
+1. コンソールプロジェクトの結果を確認します。ドキュメント作成操作で約`15 RU/s`を使用しています。
 
-1. Return to the **Azure Portal** (<http://portal.azure.com>).
+1. **Azure Portal** (<http://portal.azure.com>)に戻ります。
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. ポータルの左側で、**Resource groups**リンクを選択します。
 
-1. In the **Resource groups** blade, locate and select the **cosmoslab** resource group.
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
-1. In the **cosmoslab** blade, select the **Azure Cosmos DB** account you recently created.
+1. **cosmoslabs**ブレードで、作成されている**Azure Cosmos DB**を選択します。
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+1.  **Azure Cosmos DB**ブレードで、左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node and then select the **PeopleCollection** node.
+1. 右側に表示された**データエクスプローラー**内で、**FinancialDatabase**データベースのノードを展開し、**PeopleCollection**コンテナーのノードを展開します。
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+1. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
 
-1. In the query tab, notice the following SQL query.
+1. クエリエディターの内容を次のSQLクエリに置き換えます。
 
     ```sql
     SELECT * FROM c
     ```
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-1. In the **Results** pane, observe the results of your query. Click **Query Stats** you should see an execution cost of ~3 RU/s.
+1. **Results**ウィンドウで、クエリの結果を確認します。**Query Stats** をクリックすると、~3 RU/秒の実行コストが表示されます。
 
-1. Return to the currently open **Visual Studio Code** editor containing your .NET Core project.
+1. .NET Corプロジェクトを含む現在開いている**Visual Studio Code**エディターに戻ります。
 
-1. In the Visual Studio Code window, select the **Program.cs** file to open an editor tab for the file.
+1. Visual Studio Codeで、**Program.cs**ファイルを選択して、ファイルのエディタータブを開きます。
 
-1. To view the RU charge for inserting a very large document, we will use the **Bogus** library to create a fictional family on our Member object. To create a fictional family, we will generate a spouse and an array of 4 fictional children:
+1. 非常に大きなドキュメントの挿入に対する RU 料金を表示するには、**Bogus**ライブラリを使用して、Memberオブジェクトに架空のファミリを作成します。架空の家族を作成するために、配偶者と4人の架空の子供の配列を生成します。
 
     ```js
     {
@@ -211,17 +211,17 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     }
     ```
 
-    Each property will have a **Bogus**-generated fictional person. This should create a large JSON document that we can use to observe RU charges.
+    各プロパティには、**Bogus**が生成した架空の人物がいます。これにより、RUを監視するために使用できる大きなJSONドキュメントが作成されます。
 
-1. Within the **Program.cs** editor tab, locate the `CreateMember` method.
+1. **Program.cs**エディタータブで、`CreateMember`メソッドを見つけます。
 
-1. Within the `CreateMember` method, locate the following line of code:
+1. `CreateMember`メソッド内で、次のコード行を見つけます。
 
     ```csharp
     object member = new Member { accountHolder = new Bogus.Person() };
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     object member = new Member
@@ -235,37 +235,37 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     };
     ```
 
-    > This new block of code will create the large JSON object discussed above.
+    > この新しいコードブロックは、上記で説明した大きなJSONオブジェクトを作成します。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the results of the console project. You should see this new operation require far more  RU/s than the simple JSON document at ~50 RU/s (last one was ~15 RU/s).
+1. コンソールプロジェクトの結果を確認します。この新しい操作には、~50 RU/sが必要なことがわかります。単純なJSON キュメントよりもはるかに多くのRUが消費されました。 (最後の操作は ~15RU/秒でした)。
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node and then select the **PeopleCollection** node.
+1. **データエクスプローラー**内で、**FinancialDatabase**データベースのノードを展開し、**PeopleCollection**コンテナーのノードを展開します。
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+1. Itemsの右側のオプションメニューから、**New SQL Query**を選択します。
 
-1. In the query tab, replace the contents of the *query editor* with the following SQL query. This query will return the only item in your container with a property named **Children**:
+1. クエリエディターの内容を次のSQLクエリに置き換えます。このクエリは、**Children**という名前のプロパティを持つコンテナー内の唯一の項目を返します
 
     ```sql
     SELECT * FROM c WHERE IS_DEFINED(c.relatives)
     ```
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-1. In the **Results** pane, observe the results of your query, you should see more data returned and a slightly higher RU cost.
+1. **Results**ウィンドウでクエリの結果を確認すると、返されるデータが多くなり、RUがわずかに高くなります。
 
-### Tune Index Policy
+### インデックスポリシーの調整
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node, expand the **PeopleCollection** node, and then select the **Scale & Settings** option.
+1. **データエクスプローラー**内で、**FinancialDatabase**データベースのノード、**PeopleCollection**コンテナーのノードの順に展開し、**Scale & Settings**オプションを選択します。
 
-1. In the **Settings** section, locate the **Indexing Policy** field and observe the current default indexing policy:
+1. **Settings**セクションで、**Indexing Policy**フィールドを見つけて、現在の既定のインデックス作成ポリシーを確認します。
 
     ```js
     {
@@ -295,9 +295,9 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     }
     ```
 
-    > This policy will index all paths in your JSON document, except for _etag which is never used in queries. This policy will also index spatial data.
+    > このポリシーは、クエリで使用されない_etagを除く、JSON ドキュメント内のすべてのパスにインデックスを付けます。このポリシーは、空間データのインデックスも作成します。
 
-1. Replace the indexing policy with a new policy. This new policy will exclude the `/relatives/*` path from indexing effectively removing the **Children** property of your large JSON document from the index:
+1. インデックス作成ポリシーを新しいポリシーに置き換えます。この新しいポリシーは、インデックス作成からパス`/relatives/*`を除外し、大きJSONドキュメントの**Children**プロパティをインデックスから効果的に削除します。
 
     ```js
     {
@@ -330,61 +330,61 @@ Azure Cosmos DB returns various response headers that can give you more metadata
     }
     ```
 
-1. Select the **Save** button at the top of the section to persist your new indexing policy.
+1. セクションの上部にある**Save**ボタンを選択して、新しいインデックス作成ポリシーを保持します。
 
-1. Select the **New SQL Query** button at the top of the **Data Explorer** section.
+1. **データ エクスプローラー**セクションの上部にある**New SQL Query**ボタンを選択します。
 
-1. In the query tab, replace the contents of the query editor with the following SQL query:
+1. クエリエディターの内容を次の SQL クエリに置き換えます。
 
     ```sql
     SELECT * FROM c WHERE IS_DEFINED(c.relatives)
     ```
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-    > You will see immediately that you can still determine if the **/relatives** path is defined.
+    > **/relatives**パスが定義されているかどうかを判断できることがすぐにわかります。
 
-1. In the query tab, replace the contents of the query editor with the following SQL query:
+1. クエリエディターの内容を次の SQLクエリに置き換えます。
 
     ```sql
     SELECT * FROM c WHERE IS_DEFINED(c.relatives) ORDER BY c.relatives.Spouse.FirstName
     ```
 
-1. Select the **Execute Query** button in the query tab to run the query.
+1. クエリタブの**Execute Query**ボタンを選択して、クエリを実行します。
 
-    > This query will fail immediately since this property is not indexed. Keep in mind when defining indexes that only indexed properties can be used in query conditions.
+    > このプロパティにはインデックスが作成されないため、このクエリはすぐに失敗します。インデックスを定義するときは、クエリ条件で使用できるのはインデックス付きプロパティのみであることに注意してください。
 
-1. Return to the currently open **Visual Studio Code** editor containing your .NET Core project.
+1. .NET Corプロジェクトを含む現在開いている**Visual Studio Code**エディターに戻ります。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the results of the console project. You should see a difference in the number of  RU/s (~26 RU/s vs ~48 RU/s previously) required to create this item. This is due to the indexer skipping the paths you excluded.
+1. コンソール プロジェクトの結果を確認します。この項目の作成に必要な RU/s (~26 RU/sと以前の ~48 RU/s) に違いがあることがわかります。これは、除外したパスをインデクサーがスキップしたことが原因です。
 
-## Troubleshooting Requests
+## リクエストのトラブルシューティング
 
-First, you will use the .NET SDK to issue request beyond the assigned capacity for a container. Request unit consumption is evaluated at a per-second rate. For applications that exceed the provisioned request unit rate, requests are rate-limited until the rate drops below the provisioned throughput level. When a request is rate-limited, the server preemptively ends the request with an HTTP status code of `429 RequestRateTooLargeException` and returns the `x-ms-retry-after-ms` header. The header indicates the amount of time, in milliseconds, that the client must wait before retrying the request. You will observe the rate-limiting of your requests in an example application.
+まず、.NET SDK を使用して、コンテナーに割り当てられた容量を超えリクエストを発行します。要求ユニットの消費量は、秒単位のレートで評価されます。プロビジョニングされた要求ユニットレートを超えるアプリケーションの場合、レートがプロビジョニングされたスループットレベルを下回るまで、要求はレート制限されます。リクエストがレート制限されている場合、サーバーはHTTPステータスコード`429 RequestRateTooLargeException`でリクエストを終了し、`x-ms-retry-after-ms`ヘッダーを返します。ヘッダーは、クライアントが要求を再試行する前に待機する必要がある時間をミリ秒単位で示します。サンプルアプリケーションでリクエストのレート制限を確認します。
 
-### Reducing R/U Throughput for a Container
+### コンテナのR/Uスループットの削減
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node, expand the **TransactionCollection** node, and then select the **Scale & Settings** option.
+1. **データエクスプローラー**セクションで、**FinancialDatabase**データベースノード、**TransactionCollection**ノードの順に展開し、**Scale & Settings**オプションを選択します。
 
-1. In the **Settings** section, locate the **Throughput** field and update it's value to **400**.
+1. **Settings**セクションで、**Throughput**フィールドを見つけ、その値を**400**に更新します。
 
-    > This is the minimum throughput that you can allocate to a container.
+    > これは、コンテナーに割り当てることができる最小スループットです。
 
-1. Select the **Save** button at the top of the section to persist your new throughput allocation.
+1. セクションの上部にある**Save**ボタンを選択して、新しいスループット割り当てを保持します。
 
-### Observing Throttling (HTTP 429)
+### スロットリングの監視 (HTTP 429)
 
-1. Return to the currently open **Visual Studio Code** editor containing your .NET Core project.
+1. .NET Corプロジェクトを含む現在開いている**Visual Studio Code**エディターに戻ります。
 
-1. Select the **Program.cs** link in the **Explorer** pane to open the file in the editor.
+1. Visual Studio Codeで、**Program.cs**ファイルを選択して、ファイルのエディタータブを開きます。
 
-1. Locate the `await CreateMember(peopleContainer)` line within the `Main` method. Comment out this line and add a new line below so it looks like this:
+1. `Main`メソッド内の`await CreateMember(peopleContainer)`行を見つけます。この行をコメントアウトし、次のように新しい行を追加します。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -399,7 +399,7 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-1. Below the `CreateMember` method create a new method `CreateTransactions`:
+1. `CreateMember`メソッドの下に新しい`CreateTransactions`メソッドを作成します。
 
     ```csharp
     private static async Task CreateTransactions(Container transactionContainer)
@@ -408,7 +408,7 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-1. Add the following code to create a collection of `Transaction` instances:
+1. 次のコードを追加して、`Transaction`インスタンスのコレクションを作成します。
 
     ```csharp
     var transactions = new Bogus.Faker<Transaction>()
@@ -420,7 +420,7 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
         .GenerateLazy(100);
     ```
 
-1. Add the following foreach block to iterate over the `Transaction` instances:
+1. 次の foreach ブロックを追加して、`Transaction`インスタンスを反復処理します。
 
     ```csharp
     foreach(var transaction in transactions)
@@ -429,23 +429,23 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-1. Within the `foreach` block, add the following line of code to asynchronously create an item and save the result of the creation task to a variable:
+1. `foreach`ブロック内に次のコード行を追加して、項目を非同期的に作成し、作成タスクの結果を変数に保存します。
 
     ```csharp
     ItemResponse<Transaction> result = await transactionContainer.CreateItemAsync(transaction);
     ```
 
-    > The `CreateItemAsync` method of the `Container` class takes in an object that you would like to serialize into JSON and store as an item within the specified collection.
+    > `Container`クラスの`CreateItemAsync`メソッドは、JSOにシリアル化し、指定されたコレクション内の項目として格納するオブジェクトを受け取ります。
 
-1. Still within the `foreach` block, add the following line of code to write the value of the newly created resource's `id` property to the console:
+1. `foreach`ブロック内に、次のコード行を追加して、新しく作成されたリソースの`id`プロパティの値をコンソールに書き込みます。
 
     ```csharp
     await Console.Out.WriteLineAsync($"Item Created\t{result.Resource.id}");
     ```
 
-    > The `ItemResponse` type has a property named `Resource` that can give you access to the item instance resulting from the operation.
+    > この`ItemResponse`型には、操作の結果としての項目インスタンスへのアクセスを可能にする名前付きプロパティ`Resource`があります。
 
-1. Your `CreateTransactions` method should look like this:
+1. `CreateTransactions`メソッドは次のようになります。
 
     ```csharp
     private static async Task CreateTransactions(Container transactionContainer)
@@ -466,19 +466,19 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-    > As a reminder, the Bogus library generates a set of test data. In this example, you are creating 100 items using the Bogus library and the rules listed above. The **GenerateLazy** method tells the Bogus library to prepare for a request of 100 items by returning a variable of type `IEnumerable<Transaction>`. Since LINQ uses deferred execution by default, the items aren't actually created until the collection is iterated. The **foreach** loop at the end of this code block iterates over the collection and creates items in Azure Cosmos DB.
+    > Bogusライブラリは一連のテストデータを生成します。この例では、偽のライブラリと上記のルールを使用して 100個のアイテムを作成しています。**GenerateLazy**メソッドは、`IEnumerable<Transaction>`型の変数を返すことによって 100項目の要求を準備するように Bogus ライブラリに指示します。LINQは既定で遅延実行を使用するため、コレクションが反復されるまで項目は実際には作成されません。このコードブロックの末尾にある**foreach**ループは、コレクションを反復処理し、Azure Cosmos DBに項目を作成します。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application. You should see a list of item ids associated with new items that are being created by this tool.
+1. コンソールアプリケーションの出力を確認します。このツールによって作成される新しいアイテムに関連付けられているアイテIDのリストが表示されます。
 
-1. Back in the code editor tab, locate the following lines of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     foreach (var transaction in transactions)
@@ -488,7 +488,7 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-    Replace those lines of code with the following code:
+    これらのコード行を次のコードに置き換えます。
 
     ```csharp
     List<Task<ItemResponse<Transaction>>> tasks = new List<Task<ItemResponse<Transaction>>>();
@@ -504,9 +504,9 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-    > We are going to attempt to run as many of these creation tasks in parallel as possible. Remember, our container is configured at the minimum of 400 RU/s.
+    > これらの作成タスクをできるだけ多く並行して実行しようとします。コンテナーは最小400 RU/秒で構成されていることに注意してください。
 
-1. Your `CreateTransactions` method should look like this:
+1. `CreateTransactions`メソッドは次のようになります。
 
     ```csharp
     private static async Task CreateTransactions(Container transactionContainer)
@@ -536,75 +536,75 @@ First, you will use the .NET SDK to issue request beyond the assigned capacity f
     }
     ```
 
-    - The first **foreach** loops iterates over the created transactions and creates asynchronous tasks which are stored in an `List`. Each asynchronous task will issue a request to Azure Cosmos DB. These requests are issued in parallel and could generate a `429 - too many requests` exception since your container does not have enough throughput provisioned to handle the volume of requests.
+    - 最初の foreach ループは、作成されたトランザクションを反復処理し、`List`に格納された各非同期タスクは、Azure Cosmos DB に要求を発行します。これらの要求は並列で発行され、コンテナーには要求の量を処理するのに十分なスループットがプロビジョニングされていないため、`429 - too many requests`例外が発生する可能性があります。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > This query should execute successfully. We are only creating 100 items and we most likely will not run into any throughput issues here.
+    > このクエリは正常に実行されます。作成しているアイテムは 100 個のみであり、ここではスループットの問題は発生しない可能性があります。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     .GenerateLazy(100);
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
-    .GenerateLazy(5000);
+    .GenerateLazy(7000);
     ```
 
-    > We are going to try and create 5000 items in parallel to see if we can hit out throughput limit.
+    > 7000個のアイテムを並行して作成して、スループットの制限に達することができるかどうかを確認します。
 
-1. **Save** all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe that the application will crash after some time.
+1. しばらくするとアプリケーションがクラッシュすることを確認します。
 
-    > This query will most likely hit our throughput limit. You will see multiple error messages indicating that specific requests have failed.
+    > このクエリは、スループットの制限に達する可能性があります。特定の要求が失敗したことを示す複数のエラーメッセージが表示されます。
 
-### Increasing R/U Throughput to Reduce Throttling
+### R/Uスループットを増やしてスロットリングを減らす
 
-1. Switch back to the Azure Portal, in the **Data Explorer** section, expand the **FinancialDatabase** database node, expand the **TransactionCollection** node, and then select the **Scale & Settings** option.
+1.  **データ エクスプローラー**セクションで、**FinancialDatabase**データベースノード、**TransactionCollection**ノードの順に展開し、**Scale & Settings**オプションを選択します。
 
-1. In the **Settings** section, locate the **Throughput** field and update it's value to **10000**.
+1. **Settings**セクションで、**Throughput**フィールドを見つけ、その値を**10000**に更新します
 
-1. Select the **Save** button at the top of the section to persist your new throughput allocation.
+1. セクションの上部にある**Save**ボタンを選択して、新しいスループット割り当てを保持します。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe that the application will complete after some time.
+1. しばらくするとアプリケーションが完了します。
 
-1. Return to the **Settings** section in the **Azure Portal** and change the **Throughput** value back to **400**.
+1. **Azure Portal**の**Settings**セクションに戻り、**Throughput**の値を**400**に戻します。
 
-1. Select the **Save** button at the top of the section to persist your new throughput allocation.
+1. セクションの上部にある**Save**ボタンを選択して、新しいスループット割り当てを保持します。
 
-## Tuning Queries and Reads
+## クエリと読み取りの調整
 
-You will now tune your requests to Azure Cosmos DB by manipulating the SQL query and properties of the **RequestOptions** class in the .NET SDK.
+次に、.NET SDKの**RequestOptions**クラスのSQLクエリとプロパティを操作して、Azure Cosmos DBへのリクエストをチューニングします。
 
-### Measuring RU Charge
+### RU使用量の測定
 
-1. Locate the `Main` method to comment out `CreateTransactions` and add a new line `await QueryTransactions(transactionContainer);`. The method should look like this:
+1. `Main`メソッドから`CreateTransactions`メソッド呼び出しをコメントアウトして、新しい行`await QueryTransactions(transactionContainer);`を追加します。`Main`メソッドは次のようになります。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -619,7 +619,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Create a new function `QueryTransactions` and add the following line of code that will store a SQL query in a string variable:
+1. 新しい`QueryTransactions`メソッドを作成し、SQL クエリを文字列変数に格納する次のコード行を追加します。
 
     ```csharp
     private static async Task QueryTransactions(Container transactionContainer)
@@ -629,113 +629,113 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-    > This query will perform a cross-partition ORDER BY and only return the top 1000 out of 50000 items.
+    > このクエリは、パーティション間の ORDER BY を実行し、1000 項目のうち上位 50000 項目のみを返します。
 
-1. Add the following line of code to create a item query instance:
+1. 次のコード行を追加して、アイテムクエリインスタンスを作成します。
 
     ```csharp
     FeedIterator<Transaction> query = transactionContainer.GetItemQueryIterator<Transaction>(sql);
     ```
 
-1. Add the following line of code to get the first "page" of results:
+1. 次のコード行を追加して、結果の最初の"ページ"を取得します。
 
     ```csharp
     var result = await query.ReadNextAsync();
     ```
 
-    > We will not enumerate the full result set. We are only interested in the metrics for the first page of results.
+    > 完全な結果セットは列挙しません。結果の最初のページのメトリックにのみ関心があります。
 
-1. Add the following lines of code to print out the Request Charge metric for the query to the console:
+1. 次のコード行を追加して、クエリの要求料金メトリックをコンソールに出力します。
 
     ```csharp
     await Console.Out.WriteLineAsync($"Request Charge: {result.RequestCharge} RU/s");
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application. You should see the **Request Charge** metric printed out in your console window. It should be ~81 RU/s.
+1. コンソーアプリケーションの出力を確認します。**Request Charge**メトリックがコンソール ウィンドウに出力されます。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     string sql = "SELECT TOP 1000 * FROM c WHERE c.processed = true ORDER BY c.amount DESC";
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     string sql = "SELECT * FROM c WHERE c.processed = true";
     ```
 
-    > This new query does not perform a cross-partition ORDER BY.
+    > この新しいクエリは、パーティション間のORDER BYを実行しません。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application. You should see a slight reduction in both the **Request Charge** value to ~35 RU/s
+1. コンソールアプリケーションの出力を確認します。**Request Charge**の両方の値が ~35 RU/sにわずかに減少します。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コーエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     string sql = "SELECT * FROM c WHERE c.processed = true";
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     string sql = "SELECT * FROM c";
     ```
 
-    > This new query does not filter the result set.
+    > この新しいクエリでは、結果セットはフィルター処理されません。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application. This query should be ~21 RU/s. Observe the slight differences in the various metric values from last few queries.
+1. コンソールアプリケーションの出力を確認します。このクエリは~21 RU/sで処理されます。最後のいくつかのクエリからのさまざまなメトリック値のわずかな違いを観察します。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
      ```csharp
      string sql = "SELECT * FROM c";
      ```
 
-     Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
      ```csharp
      string sql = "SELECT c.id FROM c";
      ```
 
-     > This new query does not filter the result set, and only returns part of the documents.
+     > この新しいクエリは結果セットをフィルター処理せず、ドキュメントの一部のみを返します。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application. This should be about ~22 RU/s. While the payload returned is much smaller, the RU/s is slightly higher because the query engine did work to return the specific property.
+1. コンソールアプリケーションの出力を確認します。これは約 ~22 RU/sです。返されるペイロードははるかに小さくなりますが、クエリエンジンが特定のプロパティを返すように機能したため、RU/sはわずかに高くなります。
 
-### Managing SDK Query Options
+### SDKクエリオプションの管理
 
-1. Locate the `CreateTransactions` method and delete the code added for the previous section so it again looks like this:
+1. `CreateTransactions`メソッドを見つけて、前のセクションで追加したコードを削除して、再び次のようになります。
 
     ```csharp
     private static async Task QueryTransactions(Container transactionContainer)
@@ -744,7 +744,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Add the following lines of code to create variables to configure query options:
+1. 次のコード行を追加して、クエリオプションを構成する変数を作成します。
 
     ```csharp
     int maxItemCount = 100;
@@ -752,7 +752,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     int maxBufferedItemCount = 0;
     ```
 
-1. Add the following lines of code to configure options for a query from the variables:
+1. 次のコード行を追加して、変数からのクエリのオプションを構成します。
 
     ```csharp
     QueryRequestOptions options = new QueryRequestOptions
@@ -763,7 +763,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     };
     ```
 
-1. Add the following lines of code to write various values to the console window:
+1. 次のコード行を追加して、コンソールウィンドウにさまざまな値を書き込みます。
 
     ```csharp
     await Console.Out.WriteLineAsync($"MaxItemCount:\t{maxItemCount}");
@@ -771,27 +771,27 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     await Console.Out.WriteLineAsync($"MaxBufferedItemCount:\t{maxBufferedItemCount}");
     ```
 
-1. Add the following line of code that will store a SQL query in a string variable:
+1. SQLクエリを文字列変数に格納する次のコード行を追加します。
 
     ```csharp
     string sql = "SELECT * FROM c WHERE c.processed = true ORDER BY c.amount DESC";
     ```
 
-    > This query will perform a cross-partition ORDER BY on a filtered result set.
+    > このクエリは、フィルター処理された結果セットに対してパーティション間のORDER BYを実行します。
 
-1. Add the following line of code to create and start new a high-precision timer:
+1. 次のコード行を追加して、高精度タイマーを作成して新しいタイマーを開始します。
 
     ```csharp
     Stopwatch timer = Stopwatch.StartNew();
     ```
 
-1. Add the following line of code to create a item query instance:
+1. 次のコード行を追加して、アイテムクエリインスタンスを作成します。
 
     ```csharp
     FeedIterator<Transaction> query = transactionContainer.GetItemQueryIterator<Transaction>(sql, requestOptions: options);
     ```
 
-1. Add the following lines of code to enumerate the result set.
+1. 次のコード行を追加して、結果セットを列挙します。
 
     ```csharp
     while (query.HasMoreResults)  
@@ -800,21 +800,21 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-    > Since the results are paged, we will need to call the `ReadNextAsync` method multiple times in a while loop.
+    > 結果はページングされるため、while ループで`ReadNextAsync`メソッドを複数回呼び出す必要があります。
 
-1. Add the following line of code stop the timer:
+1. 次のコード行を追加して、タイマーを停止します。
 
     ```csharp
     timer.Stop();
     ```
 
-1. Add the following line of code to write the timer's results to the console window:
+1. 次のコード行を追加して、タイマーの結果をコンソール ウィンドウに書き込みます。
 
     ```csharp
     await Console.Out.WriteLineAsync($"Elapsed Time:\t{timer.Elapsed.TotalSeconds}");
     ```
 
-1. The `QueryTransactions` method should now look like this:
+1. `QueryTransactions`メソッドは次のようになります。
 
     ```csharp
     private static async Task QueryTransactions(Container transactionContainer)
@@ -848,185 +848,183 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > This initial query should take an unexpectedly long amount of time. This will require us to optimize our SDK options.
+    > この最初のクエリには、予想外に長い時間がかかります。これには、SDKオプションを最適化する必要があります。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コード エディター タブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxDegreeOfParallelism = 1;
     ```
 
-    Replace that line of code with the following:
+   そのコード行を次のように置き換えます。
 
     ```csharp
     int maxDegreeOfParallelism = 5;
     ```
 
-    > Setting the `maxDegreeOfParallelism` query parameter to a value of `1` effectively eliminates parallelism. Here we "bump up" the parallelism to a value of `5`.
+    > `maxDegreeOfParallelism`クエリパラメーターの値を`1`に設定すると、並列処理が実質的に排除されます。ここでは、並列処理の値を`5`に"バンプアップ"します。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > You should see a very slight positive impact considering you now have some form of parallelism.
+    > 何らかの形の並列処理があることを考えると、ごくわずかなプラスの影響が見られるはずです。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxBufferedItemCount = 0;
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     int maxBufferedItemCount = -1;
     ```
 
-    > Setting the `MaxBufferedItemCount` property to a value of `-1` effectively tells the SDK to manage this setting.
+    > `MaxBufferedItemCount`プロパティの値を`-1`に設定すると、この設定を使用するようにSDKに効果的に指示されます。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
-
+1. ターミナルペインで、次のコマンドを入力して実行します。
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > Again, this should have a slight positive impact on your performance time.
+    > 繰り返しになりますが、これはパフォーマンス時間にわずかなプラスの影響を与えるはずです。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxDegreeOfParallelism = 5;
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     int maxDegreeOfParallelism = -1;
     ```
 
-    > Parallel query works by querying multiple partitions in parallel. However, data from an individual partitioned container is fetched serially with respect to the query setting the `maxBufferedItemCount` property to a value of `-1` effectively tells the SDK to manage this setting. Setting the **MaxDegreeOfParallelism** to the number of partitions has the maximum chance of achieving the most performant query, provided all other system conditions remain the same.
+    > 並列クエリは、複数のパーティションを並列にクエリすることで機能します。ただし、個々のパーティション分割されたコンテナーからのデータは、`maxBufferedItemCount`プロパティの値を`-1`に設定するクエリに関して、この設定を使用するように SDK に効果的に指示することで順次フェッチされます。**MaxDegreeOfParallelism**をパーティション数に設定すると、他のすべてのシステム条件が同じであれば、最もパフォーマンスの高いクエリを達成できる可能性があります。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > Again, this should have a slight impact on your performance time.
+    > 繰り返しになりますが、これはパフォーマンス時間にわずかな影響を与えるはずです。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxItemCount = 100;
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     int maxItemCount = 500;
     ```
 
-    > We are increasing the amount of items returned per "page" in an attempt to improve the performance of the query.
+    > クエリのパフォーマンスを向上させるために、"ページ"ごとに返されるアイテムの量を増やしています。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > You will notice that the query performance improved dramatically. This may be an indicator that our query was bottlenecked by the client computer.
+    > クエリのパフォーマンスが大幅に向上したことがわかります。これは、クエリがクライアントコンピューターによってボトルネックになっていることを示している可能性があります。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxItemCount = 500;
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     int maxItemCount = 1000;
     ```
 
-    > For large queries, it is recommended that you increase the page size up to a value of 1000.
+    > 大きなクエリの場合は、ページサイズを1000の値まで増やすことをお勧めします。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
-
+1. ターミナルペインで、次のコマンドを入力して実行します。
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソール アプリケーションの出力を確認します。
 
-    > By increasing the page size, you have sped up the query even more.
+    > ページ サイズを大きくすることで、クエリがさらに高速化されます。
 
-1. Back in the code editor tab, locate the following line of code:
+1. コードエディタータブに戻り、次のコード行を見つけます。
 
     ```csharp
     int maxBufferedItemCount = -1;
     ```
 
-    Replace that line of code with the following code:
+    そのコード行を次のコードに置き換えます。
 
     ```csharp
     int maxBufferedItemCount = 50000;
     ```
 
-    > Parallel query is designed to pre-fetch results while the current batch of results is being processed by the client. The pre-fetching helps in overall latency improvement of a query. **MaxBufferedItemCount** is the parameter to limit the number of pre-fetched results. Setting MaxBufferedItemCount to the expected number of results returned (or a higher number) allows the query to receive maximum benefit from pre-fetching.
+    > 並列クエリは、結果の現在のバッチがクライアントによって処理されている間に結果をプリフェッチするように設計されています。プリフェッチは、クエリの全体的な待機時間の改善に役立ちます。**MaxBufferedItemCount**は、プリフェッチされる結果の数を制限するパラメーターです。**MaxBufferedItemCount**を返される結果の予想される数 (またはそれ以上の数) に設定すると、クエリはプリフェッチから最大のメリットを得ることができます。
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > In most cases, this change will decrease your query time by a small amount.
+    > ほとんどの場合、この変更によりクエリ時間がわずかに短縮されます。
 
-### Reading and Querying Items
+### アイテムの読み取りとクエリ
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+1. **Azure Cosmos DB**ブレードで、左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node, expand the **PeopleCollection** node, and then select the **Items** option.
+1. **データエクスプローラー**セクションで、**FinancialDatabase**データベースノード、**PeaopleCollection**ノードの順に展開し、**Items**オプションを選択します。
 
-1. Take note of the **id** property value of any document as well as that document's **partition key**.
+1. ドキュメントの**id**プロパティ値と、そのドキュメントの**partition key**をメモします。
 
     ![The PeopleCollection is displayed with an item selected.  The id and Lastname is highlighted.](../media/09-find-id-key.jpg "Find an item and record its id property")
 
-1. Locate the `Main` method and comment the last line and add a new line `await QueryMember(peopleContainer);` so it looks like this:
+1. Locate the `Main`メソッドを見つけて最後の行にコメントを付け、新しい行`await QueryMember(peopleContainer);`を追加して次のようにします。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -1043,7 +1041,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Below the `QueryTransactions` method create a new method that looks like this:
+1. `QueryTransactions`メソッドの下に、次のような新しいメソッドを作成します。
 
     ```csharp
     private static async Task QueryMember(Container peopleContainer)
@@ -1052,37 +1050,36 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Add the following line of code that will store a SQL query in a string variable (replacing **example.document** with the **id** value that you noted earlier):
+1. SQLクエリを文字列変数に格納する次のコード行を追加します (**example.document**を前にメモした idの値に置き換えます)。
 
     ```csharp
     string sql = "SELECT TOP 1 * FROM c WHERE c.id = 'example.document'";
     ```
 
-    > This query will find a single item matching the specified unique id.
+    > このクエリは、指定された一意のidに一致する1つのアイテムを検索します。
 
-1. Add the following line of code to create a item query instance:
+1. 次のコード行を追加して、アイテムクエリインスタンスを作成します。
 
     ```csharp
     FeedIterator<object> query = peopleContainer.GetItemQueryIterator<object>(sql);
     ```
 
-1. Add the following line of code to get the first page of results and then store them in a variable of type **FeedResponse<>**:
+1. 次のコード行を追加して結果の最初のページを取得し、**FeedResponse<>**型の変数に格納します。
 
     ```csharp
     FeedResponse<object> response = await query.ReadNextAsync();
     ```
 
-    > We only need to retrieve a single page since we are getting the ``TOP 1`` items from the .
+    > ``TOP 1``からアイテムを取得するため、1つのページを取得するだけで済みます。
 
-1. Add the following lines of code to print out the value of the **RequestCharge** property of the **FeedResponse<>** instance and then the content of the retrieved item:
+1. 次のコード行を追加して、**FeedResponse<>**インスタンスの **RequestCharge**プロパティの値を出力し、取得した項目の内容を出力します。
 
     ```csharp
     await Console.Out.WriteLineAsync($"{response.Resource.First()}");
     await Console.Out.WriteLineAsync($"{response.RequestCharge} RU/s");
     ```
 
-1. The method should look like this:
-
+1. メソッドは次のようになります。
     ```csharp
     private static async Task QueryMember(Container peopleContainer)
     {
@@ -1095,19 +1092,19 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディター タブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > You should see the amount of ~ 3 RU/s used to query for the item. Make note of the **LastName** object property value as you will use it in the next step.
+    > 項目のクエリに使用された ~ 3 RU/sの量が表示されます。**LastName**オブジェクトのプロパティ値は、次の手順で使用するのでメモしておいてください。
 
-1. Locate the `Main` method and comment the last line and add a new line `await ReadMember(peopleContainer);` so it looks like this:
+1. Locate the `Main`メソッドを見つけて最後の行にコメントを付け、新しい行`await ReadMember(peopleContainer);`を追加して次のようにします。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -1125,7 +1122,7 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Below the `QueryMember` method create a new method that looks like this:
+1. `QueryMember`メソッドの下に、次のような新しいメソッドを作成します。
 
     ```csharp
     private static async Task<double> ReadMember(Container peopleContainer)
@@ -1134,20 +1131,20 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Add the following code to use the `ReadItemAsync` method of the `Container` class to retrieve an item using the unique id and the partition key set to the last name from the previous step. Replace the `example.document` and `<Last Name>` tokens:
+1. 次のコードを追加して、`Container`クラスの`ReadItemAsync`メソッドを使用し、前の手順の一意のidとパーティションキーをそれぞれ`example.document`、`<Last Name>`と置き換えてアイテムを読み取ります。
 
     ```csharp
     ItemResponse<object> response = await peopleContainer.ReadItemAsync<object>("example.document", new PartitionKey("<Last Name>"));
     ```
 
-1. Add the following line of code to print out the value of the **RequestCharge** property of the `ItemResponse<T>` instance and return the Request Charge (we will use this value in a later exercise):
+1. 次のコード行を追加して、`ItemResponse<T>`インスタンスの**RequestCharge**プロパティの値を出力し、要求料金を返します (この値は後の演習で使用します)。
 
     ```csharp
     await Console.Out.WriteLineAsync($"{response.RequestCharge} RU/s");
     return response.RequestCharge;
     ```
 
-1. The method should now look similar to this:
+1. メソッドは次のようになります。
 
     ```csharp
     private static async Task<double> ReadMember(Container peopleContainer)
@@ -1158,32 +1155,32 @@ You will now tune your requests to Azure Cosmos DB by manipulating the SQL query
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1.ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソール アプリケーションの出力を確認します。
 
-    > You should see that it took fewer RU/s (1 RU/s vs ~3 RU/s) to obtain the item directly if you have the item's id and partition key value. The reason why this is so efficient is that ReadItemAsync() bypasses the query engine entirely and goes directly to the backend store to retrieve the item. A read of this type for 1 KB of data or less will always cost 1 RU/s.
+    > 項目の ID とパーティションキーの値がある場合は、項目を直接取得するのにかかったRU/s(1 RU/sと ~3 RU/s) が少なくなることがわかります。これが非常に効率的である理由は、ReadItemAsync()がクエリエンジンを完全にバイパスし、バックエンドストアに直接移動してアイテムを取得するためです。この種類の読み取りで1KB以下のデータを読み取ると、常に1 RU/sのコストがかかります。
 
-## Setting Throughput for Expected Workloads
+## 予想されるワークロードのスループットの設定
 
-Using appropriate RU/s settings for container or database throughput can allow you to meet desired performance at minimal cost. Deciding on a good baseline and varying settings based on expected usage patterns are both strategies that can help.
+コンテナーまたはデータベースのスループットに適切な RU/s設定を使用すると、最小限のコストで目的のパフォーマンスを実現できます。適切なベースラインを決定し、予想される使用パターンに基づいて設定を変更することは、どちらも役立つ戦略です。
 
-### Estimating Throughput Needs
+### スループットのニーズの見積もり
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Metrics** link on the left side of the blade under the **Monitoring** section.
-1. Observe the values in the **Number of requests** graph to see the volume of requests your lab work has been making to your Cosmos containers.
+1. **Azure Cosmos DB**ブレードで、ブレードの左側にある**監視**セクションにある**メトリック（クラシック）**リンクを見つけて選択します。
+1. **要求数**グラフの値を確認して、ラボで実行した内容ががコンテナーに対して行った要求の量を確認します。
 
     ![The Metrics dashboard is displayed](../media/09-metrics.jpg "Review your Cosmos DB metrics dashboard")
 
-    > Various parameters can be changed to adjust the data shown in the graphs and there is also an option to export data to csv for further analysis. For an existing application this can be helpful in determining your query volume.
+    > さまざまなパラメータを変更して、グラフに表示されるデータを調整でき、さらに分析するためにデータをcsvにエクスポートするオプションもあります。既存のアプリケーションの場合、これはクエリの量を決定するのに役立ちます。
 
-1. Return to the Visual Studio Code window and locate the `Main` method. Add a new line `await EstimateThroughput(peopleContainer);` to look like this:
+1. Visual Studio Codeに戻り、`Main`メソッドを見つけます。次のような新しい行`await EstimateThroughput(peopleContainer);`を追加します。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -1203,7 +1200,7 @@ Using appropriate RU/s settings for container or database throughput can allow y
     }
     ```
 
-1. At the bottom of the class add a new method `EstimateThroughput` with the following code:
+1. クラスの最後に、次のコードを含む新しい`EstimateThroughput`メソッドを追加します。
 
     ```csharp
     private static async Task EstimateThroughput(Container peopleContainer)
@@ -1212,16 +1209,16 @@ Using appropriate RU/s settings for container or database throughput can allow y
     }
     ```
 
-1. Add the following lines of code to this method. These variables represent the estimated workload for our application:
+1. このメソッドに次のコード行を追加します。これらの変数は、アプリケーションの推定ワークロードを表します。
 
     ```csharp
     int expectedWritesPerSec = 200;
     int expectedReadsPerSec = 800;
     ```
 
-    > These types of numbers could come from planning a new application or tracking actual usage of an existing one. Details of determining workload are outside the scope of this lab.
+    > これらのタイプの数値は、新しいアプリケーションの計画や既存のアプリケーションの実際の使用状況の追跡から得られる可能性があります。ワークロードの決定の詳細については、このラボの範囲外です。
 
-1. Next add the following lines of code call `CreateMember` and `ReadMember` and capture the Request Charge returned from them. These variables represent the actual cost of these operations for our application:
+1. 次に、`CreateMember`と`ReadMember`の呼び出しを追加し、それらから返された要求量をキャプチャします。これらの変数は、アプリケーションのこれらの操作の実際のコストを表します。
 
     ```csharp
     double writeCost = await CreateMember(peopleContainer);
@@ -1229,13 +1226,12 @@ Using appropriate RU/s settings for container or database throughput can allow y
     ```
 
 
-1. Add the following line of code as the last line of this method to print out the estimated throughput needs of our application based on our test queries:
-
+1. 次のコード行をこのメソッドの最後の行として追加して、テスト クエリに基づいてアプリケーションの推定スループット ニーズを出力します。
     ```csharp
     await Console.Out.WriteLineAsync($"Estimated load: {writeCost * expectedWritesPerSec + readCost * expectedReadsPerSec} RU/s");
     ```
 
-1. The `EstimateThroughput` method should now look like this:
+1. `EstimateThroughput`メソッドは次のようになります。
 
     ```csharp
     private static async Task EstimateThroughput(Container peopleContainer)
@@ -1250,23 +1246,23 @@ Using appropriate RU/s settings for container or database throughput can allow y
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディタータブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソールアプリケーションの出力を確認します。
 
-    > You should see the total throughput needed for our application based on our estimates. This can then be used to guide how much throughput to provision for the application. To get the most accurate estimate for RU/s needs for your applications, you can follow the same pattern to estimate RU/s needs for every operation in your application multiplied by the number of those operations you expect per second. Alternatively you can use the Metrics tab in the portal to measure average throughput.
+    > 推定値に基づいて、アプリケーションに必要な合計スループットが表示されます。その後、これを使用して、アプリケーションにプロビジョニングするスループットの量をガイドできます。アプリケーションの RU/sのニーズを最も正確に見積もるには、同じパターンに従って、アプリケーション内のすべての操作の RU/sのニーズを推定し、1秒あたりに予想される操作の数を掛けます。または、ポータルのメトリックタブを使用して、平均スループットを測定することもできます。
 
-### Adjusting for Usage Patterns
+### 使用パターンの調整
 
-Many applications have workloads that vary over time in a predictable way. For example, business applications that have a heavy workload during a 9-5 business day but minimal usage outside of those hours. Cosmos throughput settings can also be varied to match this type of usage pattern.
+多くのアプリケーションには、予測可能な方法で時間の経過と共に変化するワークロードがあります。たとえば、5から9営業日の間に重いワークロードを持ち、その時間外の使用は最小限であるビジネス アプリケーションなどです。Cosmos のスループット設定は、この種類の使用パターンに合わせて変更することもできます。
 
-1. Locate the `Main` method and comment out the last line and add a new line `await UpdateThroughput(peopleContainer);` so it looks like this:
+1. `Main`メソッドを見つけて最後の行をコメントアウトし、新しい行`await UpdateThroughput(peopleContainer);`を追加して次のようにします。
 
     ```csharp
     public static async Task Main(string[] args)
@@ -1286,7 +1282,7 @@ Many applications have workloads that vary over time in a predictable way. For e
     }
     ```
 
-1. At the bottom of the class create a new method `UpdateThroughput`:
+1. クラスの一番下に新しい`UpdateThroughput`メソッドを作成します。
 
     ```csharp
     private static async Task UpdateThroughput(Container peopleContainer)
@@ -1295,26 +1291,26 @@ Many applications have workloads that vary over time in a predictable way. For e
     }
     ```
 
-1. Add the following code to retrieve the current RU/sec setting for the container:
+1. 次のコードを追加して、コンテナーの現在の RU/s設定を取得します。
 
     ```csharp
     int? throughput = await peopleContainer.ReadThroughputAsync();
     await Console.Out.WriteLineAsync($"{throughput} RU/s");
     ```
 
-    > Note that the type of the **Throughput** property is a nullable value. Provisioned throughput can be set either at the container or database level. If set at the database level, this property read from the **Container** will return null. When set at the container level, the same method on **Database** will return null.
+    > プロパティはnullを許容することに注意してください。プロビジョニングされたスループットは、コンテナーレベルまたはデータベースレベルで設定できます。データベースレベルで設定した場合、コンテナーから読み取られたこのプロパティはnullを返します。コンテナー レベルで設定すると、Databaseの同じメソッドはnullを返します
 
-1. Add the following line of code to print out the minimum throughput value for the container:
+1. 次のコード行を追加して、コンテナーの最小スループット値を出力します。
 
     ```csharp
-    ThroughputResponse throughputResponse = await container.ReadThroughputAsync(new RequestOptions());
+    ThroughputResponse throughputResponse = await peopleContainer.ReadThroughputAsync(new RequestOptions());
     int? minThroughput = throughputResponse.MinThroughput;
     await Console.Out.WriteLineAsync($"Minimum Throughput {minThroughput} RU/s");
     ```
 
-    > Although the overall minimum throughput that can be set is 400 RU/s, specific containers or databases may have higher limits depending on size of stored data, previous maximum throughput settings, or number of containers in a database. Trying to set a value below the available minimum will cause an exception here. The current allowed minimum value can be found on the **ThroughputResponse.MinThroughput** property.
+    > 設定できる全体的な最小スループットは400 RU/秒ですが、格納されているデータのサイズ、以前の最大スループット設定、またはデータベース内のコンテナーの数によっては、特定のコンテナーまたはデータベースの制限が高くなることがあります。使用可能な最小値を下回る値を設定しようとすると、ここで例外が発生します。現在許容される最小値は、**ThroughputResponse.MinThroughput**プロパティで確認できます。
 
-1. Add the following code to update the RU/s setting for the container then print out the updated RU/s for the container:
+1. 次のコードを追加して、コンテナーの RU/秒設定を更新し、コンテナーの更新された RU/sを出力します。
 
     ```csharp
     await peopleContainer.ReplaceThroughputAsync(1000);
@@ -1322,7 +1318,7 @@ Many applications have workloads that vary over time in a predictable way. For e
     await Console.Out.WriteLineAsync($"New Throughput {throughput} RU/s");
     ```
 
-1. The finished method should look like this:
+1. 完成したメソッドは次のようになります。
 
     ```csharp
     private static async Task UpdateThroughput(Container peopleContainer)
@@ -1340,24 +1336,24 @@ Many applications have workloads that vary over time in a predictable way. For e
     }
     ```
 
-1. Save all of your open editor tabs.
+1. 開いているすべてのエディター タブを保存します。
 
-1. In the terminal pane, enter and execute the following command:
+1. ターミナルペインで、次のコマンドを入力して実行します。
 
     ```sh
     dotnet run
     ```
 
-1. Observe the output of the console application.
+1. コンソール アプリケーションの出力を確認します。
 
-    > You should see the initial provisioned value before changing to **1000**.
+    > **1000**に変更する前に、最初にプロビジョニングされた値が表示されます。
 
-1. In the **Azure Cosmos DB** blade, locate and select the **Data Explorer** link on the left side of the blade.
+1.  **Azure Cosmos DB**ブレードで、左側にある**データエクスプローラー**リンクを見つけて選択します。
 
-1. In the **Data Explorer** section, expand the **FinancialDatabase** database node, expand the **PeopleCollection** node, and then select the **Scale & Settings** option.
+1.  **データエクスプローラー**内で、**FinancialDatabase**データベースのノード、**PeopleCollection**コンテナーのノードの順に展開し、**Scale & Settings**オプションを選択します。
 
-1. In the **Settings** section, locate the **Throughput** field and note that is is now set to **1000**.
+1. **Settings**セクションで、**Throughput**フィールドを見つけ、**1000**に設定されていることを確認します。
 
-> Note that you may need to refresh the Data Explorer to see the new value.
+> 新しい値を表示するには、データ エクスプローラーを更新する必要がある場合があります。
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
