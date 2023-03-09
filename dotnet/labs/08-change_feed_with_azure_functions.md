@@ -1,57 +1,58 @@
-# Azure Cosmos DB Change Feed
+# Azure Cosmos DB変更フィード
 
-In this lab you will use the Change Feed Processor Library and Azure Functions to implement three use cases for the Azure Cosmos DB Change Feed
+このラボでは、変更フィード プロセッサ ライブラリと Azure Functionsを使用して、Azure Cosmos DB 変更フィードの 3 つのユース ケースを実装します。
 
-> If this is your first lab and you have not already completed the setup for the lab content see the instructions for [Account Setup](00-account_setup.md) before starting this lab.
+>  これが初めてのラボであり、ラボコンテンツのセットアップをまだ完了していない場合は、このラボを開始する前に、 [アカウントのセットアップ](00-account_setup.md) を実施してください。
 
-## Build A .NET Console App to Generate Data
+## データ作成の.NETコンソールアプリを実装する
 
-In order to simulate data flowing into our store, in the form of actions on an e-commerce website, we'll build a simple .NET Console App to generate and add documents to our Cosmos DB CartContainer
+e-コマースWebサイトでの操作を想定してカート内のデータをシミュレートするために、ドキュメントを生成してCosmos DBのCartContainerに登録する単純な.NETコンソールアプリを構築します。
 
-1. On your local machine, locate the CosmosLabs folder in your Documents folder and open the `Lab08` folder that will be used to contain the content of your .NET Core project. If you are completing this lab through Microsoft Hands-on Labs, the CosmosLabs folder will be located at the path: **C:\labs\CosmosLabs**
+1. ローカルコンピューターで、ドキュメントフォルダー内のCosmosLabsフォルダーを見つけ、.NET Core プロジェクトのコンテンツを格納するために使用される`Lab08`フォルダーを開きます。マイクロソフト ハンズオン ラボを通じてこのラボを完了する場合、CosmosLabsフォルダーは**C:\labs\CosmosLabs**のパスにあります。
 
-1. In the `Lab08` folder, right-click the folder and select the **Open with Code** menu option.
+1. `Lab08`フォルダーでフォルダを右クリックし、**Codeで開く**メニューオプションを選択します。
 
-   > Alternatively, you can run a terminal in your current directory and execute the `code .` command.
+   > または、現在のディレクトリでターミナルを実行して`code .`コマンドを実行することもできます。
 
-1. In the explorer pane on the left, locate the **DataGenerator** folder and expand it.
+1. 左側のエクスプローラーウィンドウで、**DataGenerator**フォルダーを見つけて展開します。
 
-1. Select the `program.cs` link in the **Explorer** pane to open the file in the editor.
+1. **Explorer**ウィンドウで`Program.cs`リンクを選択して、エディターでファイルを開きます。
 
    ![The program.cs is displayed](../media/08-console-main-default.jpg "Open the program.cs file")
 
-1. For the `_endpointUrl` variable, replace the placeholder value with the **URI** value and for the `_primaryKey` variable, replace the placeholder value with the **PRIMARY KEY** value from your Azure Cosmos DB account. Use [these instructions](00-account_setup.md) to get these values if you do not already have them:
+1. 以前のラボでメモしていたAzure Cosmos DBの資格情報から、`_endpointUri`変数の値に、**URI**を、`_primaryKey`変数の値に**プライマリーキー**を入力してください。資格情報が不明な場合は、[こちら](00-account_setup.md)の手順を参照してください。
 
-   - For example, if your **url** is `https://cosmosacct.documents.azure.com:443/`, your new variable assignment will look like this:
+    - > 例として **uri** が `https://cosmosacct.documents.azure.com:443/` の場合、記述は以下のようになります
 
-   ```csharp
-   private static readonly string _endpointUrl = "https://cosmosacct.documents.azure.com:443/";
-   ```
+    ```csharp
+    private static readonly string _endpointUri = "https://cosmosacct.documents.azure.com:443/";
+    ```
 
-   - For example, if your **primary key** is `elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==`, your new variable assignment will look like this:
+    - 例として **プライマリキー** が ``elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==`` の場合、記述は以下のようになります。
 
-   ```csharp
-   private static readonly string _primaryKey = "elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==";
-   ```
+    ```csharp
+    private static readonly string _primaryKey = "elzirrKCnXlacvh1CRAnQdYVbVLspmYHQyYrhx0PltHi8wn5lHVHFnd1Xm3ad5cn4TUcH4U0MSeHsVykkFPHpQ==";
+    ```
 
-### Create Function to Add Documents to Cosmos DB
+### Cosmos DBにドキュメントを登録する関数を作成する
 
-The key functionality of the console application is to add documents to our Cosmos DB to simulate activity on our e-commerce website. Here, you'll create a data definition for these documents and define a function to add them
+コンソールアプリケーションの主な機能は、ドキュメントを Cosmos DBに追加して、eコマースWebサイトでのアクティビティをシミュレートすることです。ここでは、これらのドキュメントのデータ定義を作成し、それらを追加する関数を定義します。
 
-1. Within the `program.cs` file in the **DataGenerator** folder, locate the `AddItem()` method. The purpose of this method is to add an instance of **CartAction** to our CosmosDB Container.
+1. **DataGenerator**フォルダー内の`Program.cs`ファイル内で、`AddItem()`メソッドを見つけて確認します。このメソッドの目的は、**CartAction**のインスタンスをCosmosDBコンテナーに追加することです
 
-   > If you'd like to review how to add documents to a CosmosDB container, [refer to Lab 01 ](01-creating_partitioned_collection.md).
+   > Cosmos DBコンテナーにドキュメントを追加する方法を確認する場合は、[Lab 01](01-creating_partitioned_collection.md)を参照してください。
 
-### Create a Function to Generate Random Shopping Data
+### ランダムなショッピングデータを生成する関数を作成する
 
-1. Within the `Program.cs` file in the **DataGenerator** folder, locate the `GenerateActions()` method. The purpose of this method is to create randomized **CartAction** objects that you'll consume using the CosmosDB change feed.
+1. **DataGenerator**フォルダー内の`Program.cs`ファイル内で、`GeneratingActions()`メソッドを見つけて確認します。このメソッドの目的は、Cosmos DBの変更フィードを利用してランダム化された**CartAction**オブジェクトを作成することです。
 
-### Run the Console App and Verify Functionality
 
-You're ready to run the console app, and in this step you'll take a look at your Cosmos DB account to ensure test data is being written as expected.
+### アプリケーションの実行と機能の確認
 
-1. Open a terminal window
-2. In the terminal pane, enter and execute the following command to run your console app:
+コンソールアプリケーションを実行する準備ができたら、アプリケーションを実行し、テストデータが期待通りに書き込まれていることを確認します。
+
+1. ターミナルウィンドウを開きます。
+2. ターミナルウィンドウで、次のコマンドを入力してコンソールアプリを実行します。
 
    ```sh
    cd DataGenerator
@@ -59,47 +60,47 @@ You're ready to run the console app, and in this step you'll take a look at your
    dotnet run
    ```
 
-3. After a brief build process, you should begin to see the asterisks being printed as data is being generated and written to Cosmos DB.
+3. アプリケーションがビルドされると、データが生成されてCosmos DBに登録されます。その際、コンソールにはアスタリスクが出力されます。
 
    ![The terminal window is displayed showing the program running outputting asterisks](../media/08-console-running.jpg "Run the program, let it run for a minute or two")
 
-4. Let the console app run for a minute or two and then stop it by pressing any key in the console.
+4. アプリケーションを1～2分程度実行してから、任意のキーを押してアプリケーションを停止します。
 
-5. Switch to the Azure Portal and your Cosmos DB Account.
+5. Azure PortalでCosmos DB Accountを表示します。
 
-6. From within the **Azure Cosmos DB** blade, select the **Data Explorer** tab on the left.
+6. **Azure Cosmos DB**ブレードで、ブレードの左側にある**データエクスプローラー**リンクを見つけて選択します。
 
    ![The Cosmos DB resource with the Data Explorer highlighted](../media/08-cosmos-overview-final.jpg "Open the Data Explorer")
 
-7. Expand the **StoreDatabase** then the **CartContainer** and select **Items**. You should see something like the following screenshot.
+7. **StoreDatabase**を展開し、さらに**CartContainer**を展開して、**Items**を選択します。次のスクリーンショットのように表示されます。
 
-   > Note your data will be slightly different since it is random, the important thing is that there is data here at all
+   > データはランダムに生成されているため、表示は異なります。データが登録されていることを確認して下さい。
 
    ![An item in the StoreDatabase is selected](../media/08-cosmos-data-explorer-with-data.jpg "Select an item in the StoreDatabase")
 
-## Consume Cosmos DB Change Feed via the Change Feed Processor
+## 変更フィードプロセッサ経由でCosmos DB変更フィードを使用する
 
-The two main options for consuming the Cosmos DB change feed are Azure Functions and the Change Feed Processor library. We'll start with the Change Feed Processor via a simple console application
+変更フィードを使用するための主な方法は、Azure Functionsと変更フィードプロセッサライブラリです。ここでは、コンソールアプリケーションで変更フィードプロセッサを使用します。
 
-### Connect to the Cosmos DB Change Feed
+### 変更フィードに接続する
 
-The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A common concern when designing a Cosmos DB container is proper selection of a partition key. You'll recall that we created our `CartContainer` with a partition key of `/Item`. What if we find out later this key is wrong? Or what if writes work better with `/Item` while reads work better with `/BuyerState` as the partition key? We can avoid analysis paralysis by using Cosmos DB Change Feed to migrate our data in real time to a second container with a different partition key!
+変更フィードを試す初めのユースケースは、ライブマイグレーションです。Cosmos DBコンテナーを設計する際の一般的な懸念事項は、パーティションキーの適切な選択です。このラボでは、`CartContainer`のパーティションキーは`/Item`です。しかし、実際に`/Item`が適切に機能するのは書き込みのみで、読み取りの場合は`/BuyerState`のほうが適切であるとすると、`CartContainer`は読み取り性能に問題があると言えます。変更フィードを利用すれば、別のパーティションキーを持つコンテナーにリアルタイムにデータを連係し、このようなパフォーマンス問題を回避することができます。
 
-1. Switch back to Visual Studio Code
+1. Visual Studio Codeに戻ります。
 
-2. Select the `Program.cs` link under the **ChangeFeedConsole** folder in the **Explorer** pane to open the file in the editor.
+2. **エクスプローラー**ウィンドウから、**ChangeFeedConsole**フォルダーの下にある`program.cs`を選択してエディタで開きます。
 
-3. For the `_endpointUrl` variable, replace the placeholder value with the **URI** value and for the `_primaryKey` variable, replace the placeholder value with the **PRIMARY KEY** value from your Azure Cosmos DB account.
+3. 以前のラボでメモしていたAzure Cosmos DBの資格情報から、`_endpointUri`変数の値に、**URI**を、`_primaryKey`変数の値に**プライマリーキー**を入力してください。資格情報が不明な場合は、[こちら](00-account_setup.md)の手順を参照してください。
 
-4. Notice the container configuration value at the top of the `program.cs` file, for the name of the destination container, following `_containerId`:
+4. `program.cs`ファイルの先頭にある、宛先コンテナの名前（`_containerId`）の値を確認して下さい。
 
    ```csharp
    private static readonly string _destinationContainerId = "CartContainerByState";
    ```
 
-   > In this case we are going to migrate our data to another container within the same database. The same ideas apply even if we wanted to migrate our data to another database entirely.
+   > この場合、同じデータベース内の別のコンテナーにデータを移行します。データを完全に別のデータベースに移行したい場合にも、同様な考え方で実現できます。
 
-5. In order to consume the change feed we make use of a **Lease Container**. Add the following lines of code in place of `//todo: Add lab code here` to create the lease container:
+5. 変更フィードを使用するために、**リースコンテナー**を使用します。`//todo: Add lab code here`の箇所を以下のコードに書き換えて、リースコンテナーを作成します。
 
    ```csharp
    ContainerProperties leaseContainerProperties = new ContainerProperties("consoleLeases", "/id");
@@ -107,8 +108,9 @@ The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A 
    ```
 
    > The **Lease Container** stores information to allow for parallel processing of the change feed, and acts as a book mark for where we last processed changes from the feed.
+   > **リースコンテナー**には、変更フィードの並列処理を可能にする情報が格納され、フィードからの変更を最後に処理した場所のブックマークとして機能します。
 
-6. Now, add the following lines of code directly after the **leaseContainer** definition in order to get an instance of the change processor:
+6. 次に、変更プロセッサのインスタンスを取得するために**leaseContainer**を作成したコードの直後に、次のコードを追加します。
 
    ```csharp
    var builder = container.GetChangeFeedProcessorBuilder("migrationProcessor", (IReadOnlyCollection<object> input, CancellationToken cancellationToken) => {
@@ -122,21 +124,22 @@ The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A 
                    .Build();
    ```
 
-   > Each time a set of changes is received, the `Func<T>` defined in `CreateChangeFeedProcessorBuilder` will be called. We're skipping the handling of those changes for the moment.
+   > 変更を受信する度に、`GetChangeFeedProcessorBuilder`に定義された`Func<T>`が呼び出されます。現時点では、これらの変更の処理をスキップしています。
 
-7. In order for our processor to run, we have to start it. Following the definition of **processor** add the following line of code:
+7. プロセッサを実行するには、プロセッサを起動する必要があります。先ほどのコードの下に次のコード行を追加します。
 
    ```csharp
    await processor.StartAsync();
    ```
 
-8. Finally, when a key is pressed to terminate the processor we need to end it. Locate the `//todo: Add stop code here` line and replace it with this code:
+8. 最後に、プロセッサを終了するためにキーが押されたら、プロセッサを終了する必要があります。`//todo: Add stop code here`と書かれた行を見つけて、次のコードに置き換えます。
 
    ```csharp
    await processor.StopAsync();
    ```
 
 9. At this point, your `Program.cs` file should look like this:
+この時点で、`Program.cs`ファイルは次のようになります。
 
    ```csharp
    using System;
@@ -191,11 +194,11 @@ The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A 
    }
    ```
 
-### Complete the Live Data Migration
+### ライブデータマイグレーションの完了
 
-1. Within the `program.cs` file in the **ChangeFeedConsole** folder, locate the todo we left ourselves `//todo: Add processor code here`
+1. **ChangeFeedConsole**フォルダーの`Program.cs`内で、`//todo: Add processor code here`と書かれた行を見つけます。
 
-1. Modify the signature of the `Func<T>` in the `GetChangeFeedProcessorBuilder` replacing `object` with `CartAction` as follows:
+1. `GetChangeFeedProcessorBuilder`内の`Func<T>`のシグネチャ`object`を`CartAction`に変更します。以下のようになります。
 
    ```csharp
    var builder = container.GetChangeFeedProcessorBuilder("migrationProcessor", 
@@ -206,7 +209,7 @@ The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A 
       });
    ```
 
-1. The **input** is a collection of **CartAction** documents that have changed. To migrate them, we'll simply loop through them and write them out to our destination container. Replace the `//todo: Add processor code here` with the following code:
+1. **input**は、変更された**CartAction**内のドキュメントのコレクションです。これらを移行するには、ループ処理で宛先のコンテナーに書き出すだけです。`//todo: Add processor code here`を、次のコード行に置き換えます。
 
    ```csharp
    var tasks = new List<Task>();
@@ -219,13 +222,13 @@ The first use case we'll explore for Cosmos DB Change Feed is Live Migration. A 
    return Task.WhenAll(tasks);
    ```
 
-### Test to Confirm the Change Feed Function Works
+### 変更フィードのテスト
 
-Now that we have our first Change Feed consumer, we're ready to run a test and confirm that it works
+変更フィードを処理するアプリケーションができたので、テストを実行することができます。
 
-1. Open a **second** terminal window and navigate to the **ChangeFeedConsole** folder
+1. **2番目の**ターミナルウィンドウを開き、**ChangeFeedConsole**フォルダーに移動します。
 
-1. Start up your console app by running the following commands in the **second** terminal window:
+1. 変更フィードを処理するアプリケーションを起動するために、**2番目の**ターミナルウィンドウで次のコマンドを実行します。
 
    ```sh
    cd ChangeFeedConsole
@@ -233,26 +236,26 @@ Now that we have our first Change Feed consumer, we're ready to run a test and c
    dotnet run
    ```
 
-1. Once the function starts running you'll see the following messages in your console:
+1. 関数の実行が開始されると、コンソールに次のメッセージが表示されます。
 
    ```sh
    Started Change Feed Processor
    Press any key to stop the processor...
    ```
 
-   > Because this is the first we've run this consumer, there will be no data to consume. We'll start the data generator in order to start receiving changes.
+   > 変更フィードを処理するのはこれが初めてであるため、この時点では処理するデータはありません。変更を受信するために、データ生成アプリケーションを使用します。
 
-1. In the **first** terminal window, navigate to the **DataGenerator** folder
+1. **最初の**ターミナルウィンドウで、**DataGenerator**フォルダに移動します。
 
-1. Start the **DataGenerator** again by running the following command in the **first** terminal window
+1. 次のコマンドを**最初の**ターミナルウィンドウで実行して、**DataGenerator**アプリケーションを再度実行します。
 
    ```sh
    dotnet run
    ```
 
-1. You should see the asterisks start to appear again as the data is being written.
+1. データが書き込まれると、アスタリスクが再び表示され始めるはずです。
 
-1. Soon after data starts being written, you'll start to see the following output in the **second** terminal window:
+1. データの書き込みが開始されるとすぐに、**2番目の**ターミナルウィンドウに次の出力が表示され始めます。
 
    ```sh
    100 Changes Received
@@ -261,108 +264,102 @@ Now that we have our first Change Feed consumer, we're ready to run a test and c
    ...
    ```
 
-1. After a few minutes, navigate to the **cosmosdblab** Data Explorer and expand **StoreDatabase** then **CartContainerByState** and select **Items**. You should see items populating there, and note that the Partition Key this time is `/BuyerState`.
+1. 数分後、**cosmosdblab**データエクスプローラーに移動し、**StoreDatabase**、**CartContainerByState**の順に展開し、 **Items**を選択します。そこに項目が登録されていることが確認できます。コンテナーのパーティションキーが`/BuyerState`であることに注目してください。 
 
    ![The Cart Container By State is displayed](../media/08-cart-container-by-state.jpg "Open the CartContainerByState and review the items")
 
-1. Press any key in the **first** terminal to stop data generation
+1. **最初の**ターミナルウィンドウで任意のキーを押して、データ生成を停止します。
 
-1. Let the **ChangeFeedConsole** finish running (it shouldn't take very long). You'll know it's done when it stops writing new log messages. Stop the function by pressing any key in the **second** terminal window.
+1. **ChangeFeedConsole**の実行を終了させます。データ生成を終了させてしばらくすると、新しいログメッセージの書き込みが停止して完了したことがわかります。**2番目の**ターミナルウィンドウで任意のキーを押して機能を停止します。
 
-> You've now written your first Cosmos DB Change Feed consumer, which writes live data to a new collection. Congrats! In the next steps we'll take a look at using Azure Functions to consume Cosmos DB change feed for two additional use cases.
+> これで、ライブデータを新しいコレクションに書き込む最初のCosmos DB変更フィードアプリケーションが作成されました。次の手順では、Azure Functionsを使用して Cosmos DB変更フィードを使用する方法について、さらに2つのユース ケースについて説明します。
 
-## Create an Azure Function to Consume Cosmos DB Change Feed
+## 変更フィードを使用する Azure Functionsを作成する
 
-One of the interesting features of Azure Cosmos DB is its change feed. The change feed provides support for many scenarios, three of which we'll investigate further in this lab.
+### .NET CoreのAzure Functionsプロジェクトを作成する
 
-### Create a .NET Core Azure Functions Project
+この演習では、.NET SDKの変更フィードプロセッサライブラリを実装して、スケーラブルでフォールトトレラントな方法で Azure Cosmos DBの変更フィードを読み取ります。Azure Functionsでは、変更フィードプロセッサをネイティブにサポートすることで、Cosmos DBの変更フィードにすばやく簡単に接続できます。まずは、.NET CoreでAzure Functionsプロジェクトを作成します。
 
-In this exercise, we will implement .NET SDK's change feed processor library to read Azure Cosmos DB's change feed in in a scalable and fault-tolerant way. Azure Functions provide a quick and easy way to hook up with the Cosmos DB Change Feed, by implementing the change feed processor out of the box. You'll start by setting up a.NET Core Azure Functions project.
+> 詳細については、[doc](https://docs.microsoft.com/azure/cosmos-db/sql/change-feed-processor)を参照してください。
 
-> For more information, please read the [doc](https://docs.microsoft.com/azure/cosmos-db/sql/change-feed-processor).
+1. ターミナル ウィンドウを開き、このラボで使用している Lab08 フォルダーに移動します。
 
-1. Open a terminal window and navigate to the Lab08 folder you've been using for this lab.
+1. Azure Functions Core Toolsを利用するために、`node.js`が必要です。
 
-1. To install command line support for Azure Functions, you'll need `node.js`.
+> node.jsがインストールされていない場合、[こちら](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-run-local?tabs=v4%2Cwindows%2Ccsharp%2Cportal%2Cbash#install-the-azure-functions-core-tools)を参考に、Core Toolsのパッケージを導入することもできます。
 
-1. In your terminal pane, check your node version by running the following
+1. ターミナルウィンドウで次のコマンドを入力して実行し、nodeバージョンを確認します。
 
    ```sh
    node --version
    ```
 
-   > If you do not have node.js installed [download it here](https://docs.npmjs.com/getting-started/installing-node#osx-or-windows). If you are using a version older than `8.5` run the following:
-
+   > node.jsがインストールされていない場合は、[こちら](https://docs.npmjs.com/getting-started/installing-node#osx-or-windows)からダウンロードしてください。`8.5`より古いバージョンをインストールしている場合には、次のコマンドを実行してください。
+   
    ```sh
    npm i -g node@latest
    ```
 
-1. Enter and execute the following command to download the Azure Function tooling:
+1. 次のコマンドを入力して実行し、Azure Function Core Toolsをダウンロードします。
 
    ```sh
    npm install -g azure-functions-core-tools
    ```
 
-   > If this command fails, refer to the previous step to setup node.js. You may need to restart your terminal window for these changes to take effect.
+   > このコマンドが失敗した場合は、node.jsのセットアップに関する前のステップを参照してください。これらの変更を有効にするには、ターミナルウィンドウを再起動する必要がある場合があります。
 
-1. In your terminal pane, enter and execute the following command. This command creates a new Azure Functions project:
+1. ターミナルウィンドウで、次のコマンドを入力して実行します。このコマンドにより、新しいAzure Functionsプロジェクトが作成されます。
 
    ```sh
    func init ChangeFeedFunctions
    ```
 
-1. When prompted, choose the **dotnet** worker runtime. Use the arrow keys to scroll up and down.
+1. メッセージが表示されたら、**worker runtime**として**dotnet**を選択します。矢印キーを使用して上下にスクロールします。
 
-1. Change directory to the `ChangeFeedFunctions` directory created in the previous step
+1. メッセージが表示されたら、**language**として**C#**を選択します。矢印キーを使用して上下にスクロールします。
+
+1. 前の手順で作成された`ChangeFeedFunctions`ディレクトリに変更します
 
    ```sh
    cd ChangeFeedFunctions
    ```
 
-1. In your terminal pane, enter and execute the following command:
+1. ターミナルウィンドウで、次のコマンドを入力して実行します。
 
    ```sh
    func new
    ```
 
-1. When prompted, select **C#** from the list of languages. Use the arrow keys to scroll up and down.
+1. メッセージが表示されたら、テンプレートの一覧から**CosmosDBTrigger**を選択します。矢印キーを使用して上下にスクロールします。
 
-1. When prompted, select **CosmosDBTrigger** from the list of templates. Use the arrow keys to scroll up and down.
+1. プロンプトが表示されたら、関数の名前に`MaterializedViewFunction`を入力します。
 
-1. When prompted, enter the name `MaterializedViewFunction` for the function
-
-1. Open the **ChangeFeedFunctions.csproj** file and update the target framework to .NET Core 3.1
+1. **ChangeFeedFunctions.csproj** ファイルを開き、ターゲット フレームワークを .NET Core 7.0に更新します。
 
     ```xml
-   <TargetFramework>netcoreapp3.1</TargetFramework>
+   <TargetFramework>net7.0</TargetFramework>
     ```
 
-1. In your terminal pane, enter and execute the following commands:
+1. ターミナルウィンドウで、次のコマンドを入力して実行します。
 
    ```sh
    dotnet add package Microsoft.Azure.Cosmos
    dotnet add package Microsoft.NET.Sdk.Functions --version 3.0.9
-   dotnet add package Microsoft.Azure.WebJobs.Extensions.CosmosDB --version 3.0.7
+   dotnet add package Microsoft.Azure.WebJobs.Extensions.CosmosDB
    dotnet add ChangeFeedFunctions.csproj reference ..\\Shared\\Shared.csproj
    ```
 
-1. In your terminal pane, build the project:
+1. これで**ChangeFeedFunctions**フォルダの下に新しいAzure Functionsプロジェクトが作成されました。
 
-   ```sh
-   dotnet build
-   ```
+# 変更フィードを使用してマテリアライズドビューを作成する
 
-1. Your first Azure Function has now been created, in Visual Studio Code and note the new **ChangeFeedFunctions** folder, expand it and explore the **local.settings.json**, and the **MaterializedViewFunction.cs** files.
+マテリアライズドビューパターンは、ソースデータ形式がアプリケーションの要件にあまり適していない環境で、データの事前設定されたビューを生成するために使用されます。この例では、州別に集計された売上データのリアルタイムコレクションを作成し、別のアプリケーションが売上の概要データをすばやく取得できるようにします。
 
-## Use Cosmos DB Change Feed for the Materialized View Pattern
+### マテリアライズドビューのAzure Functionを作成する
 
-The Materialized View pattern is used to generate pre-populated views of data in environments where the source data format is not well suited to the applications requirements. In this example, we'll create a real time collection of sales data aggregated by State that would allow another application to quickly retrieve summary sales data
+1. **local.settings.json**ファイルを見つけて選択し、エディターで開きます。
 
-### Create the Materialized View Azure Function
-
-1. Locate the **local.settings.json** file and select it to open it in the editor.
-
-1. Add a new value `DBConnection` using the **Primary Connection String** parameter from your Cosmos DB account collected earlier in this lab. The **local.settings.json** file should like this:
+1. Add a new value `DBConnection` using the **Primary Connection String** parameter from your Cosmos DB account collected earlier in this lab. The **local.settings.json** file should like this:このラボの前半で収集した Cosmos DBアカウントの**プライマリ接続文字列**パラメーターを使用して、新しい値を追加します。**local.settings.json**ファイルは次のようになります。
 
    ```json
    {
@@ -375,33 +372,33 @@ The Materialized View pattern is used to generate pre-populated views of data in
    }
    ```
 
-1. Select the new `MaterializedViewFunction.cs` file to open it in the editor.
+1. Select the new  file to open it in the editor.`MaterializedViewFunction.cs`ファイルを選択して、エディターで開きます。
 
-   > The **databaseName**, **collectionName** and **ConnectionStringSetting** refer to the source Cosmos DB account that the function is listening for changes on.
+   > The ,  and  refer to the source Cosmos DB account that the function is listening for changes on.**databaseName**、**collectionName**、および**ConnectionStringSetting**は、関数が変更をリッスンしているCosmos DBアカウントを参照します。
 
-1. Change the **databaseName** value to `StoreDatabase`
+1. **databaseName**の値を`StoreDatabase`に変更します。
 
-1. Change the **collectionName** value to `CartContainerByState`
+1.  **collectionName**の値を`CartContainerByState`に変更します。
 
-   > Cosmos DB Change Feeds are guaranteed to be in order within a partition, so in this case we want to use the Container where the partition is already set to the State, `CartContainerByState`, as our source
+   > Cosmos DB 変更フィードはパーティション内で順序付けられることが保証されているため、この場合、パーティションが既に状態に設定されている`CartContainerByState`コンテナーをソースとして使用します。
 
-1. Replace the **ConnectionStringSetting** placeholder with the new setting you added earlier **DBConnection**
+1. **ConnectionStringSetting**の値を、前の手順で設定した**DBConnection**に置き換えます。
 
    ```csharp
    ConnectionStringSetting = "DBConnection",
    ```
 
-1. Between **ConnectionStringSetting** and **LeaseCollectionName** add the following line:
+1. **ConnectionStringSetting**と**LeaseCollectionName**の間に次の行を追加します。
 
    ```csharp
    CreateLeaseCollectionIfNotExists = true,
    ```
 
-1. Change the **LeaseCollectionName** value to `materializedViewLeases`
+1. **LeaseCollectionName**の値を`materializedViewLeases`に変更します。
 
-   > Lease collections are a critical part of the Cosmos DB Change Feed. They allow multiple instances of a function to operate over a collection and serve as a virtual _bookmark_ for where the function last left off.
+   > リース コレクションは、Cosmos DB 変更フィードの重要な部分です。これにより、関数の複数のインスタンスがコレクションに対して動作し、関数が最後に中断した場所の仮想ブックマークとして機能します。
 
-1. Your **Run** function should now look like this:
+1. **Run**関数は次のようになります。
 
    ```csharp
    [FunctionName("MaterializedViewFunction")]
@@ -420,9 +417,9 @@ The Materialized View pattern is used to generate pre-populated views of data in
    }
    ```
 
-> The function works by polling your container on an interval and checking for changes since the last lease time. Each turn of the function may result in multiple documents that have changed, which is why the input is an IReadOnlyList of Documents.
+> この関数は、コンテナーを一定の間隔でポーリングし、最後のリース時間以降の変更を確認することで機能します。関数のターンごとに複数のドキュメントが変更される可能性があるため、引数はDocumentのIDeadOnlyListです。
 
-1. Add the following using statements to the top of the `MaterializedViewFunction.cs` file:
+1. 次の using ステートメントを`MaterializedViewFunction.cs`ファイルの先頭に追加します。
 
    ```csharp
    using System.Threading.Tasks;
@@ -432,7 +429,7 @@ The Materialized View pattern is used to generate pre-populated views of data in
    using Shared;
    ```
 
-1. Modify the signature of the **Run** function to be `async` with a `Task` return type. Your function should now look like the following:
+1. **Run**関数のシグネチャを戻り値の型を`async Task`に変更します。関数は次のようになります。
 
    ```csharp
    [FunctionName("MaterializedViewFunction")]
@@ -451,7 +448,7 @@ The Materialized View pattern is used to generate pre-populated views of data in
       }
    ```
 
-1. Your target this time is the container called **StateSales**. Add the following lines to the top of the **MaterializedViewFunction** to setup the destination connection. Be sure to replace the endpoint url and the key.
+1. 今回のターゲットは、**StateSales**というコンテナーです。**MaterializedViewFunction**の先頭に次の行を追加して、宛先接続を設定します。エンドポイントURLとキーは必ず置き換えてください。
 
    ```csharp
     private static readonly string _endpointUrl = "<your-endpoint-url>";
@@ -461,11 +458,11 @@ The Materialized View pattern is used to generate pre-populated views of data in
     private static CosmosClient _client = new CosmosClient(_endpointUrl, _primaryKey);
    ```
 
-### Add a new Class for StateSales Data
+### StateSalesデータのクラスを作成する
 
-1. Open `DataModel.cs` within the **Shared** folder in the editor
+1. **Shared**フォルダーの下にある`DataModel.cs`を開きます。
 
-1. Following the definition of the **CartAction** class, add a new class as follows:
+1. **CartAction**クラスの定義の下に、次のように新しいクラスを追加します。
 
    ```csharp
    public class StateCount
@@ -483,13 +480,13 @@ The Materialized View pattern is used to generate pre-populated views of data in
    }
    ```
 
-### Update the MaterializedViewFunction to Create the Materialized View
+### MaterializedViewFunctionを実装してマテリアライズドビューを作成する
 
-The Azure Function receives a list of Documents that have changed. We want to organize this list into a dictionary keyed off of the state of each document and keep track of the total price and count of items purchased. We'll use this dictionary later to write data to our materialized view collection **StateSales**
+Azure Functionsは、変更されたドキュメントの一覧を受け取ります。このリストを各ドキュメントの状態をディクショナリ形式に整理し、購入したアイテムの合計価格と数を追跡したいと考えています。後でこのディクショナリを使用して、具体化されたビューコレクション**StateSales**にデータを書き込みます。
 
-1. Switch back to the **MaterializedViewFunction.cs** file in the editor
+1. エディターで**MaterializedViewFunction.cs**ファイルに戻ります。
 
-1. Locate the following section in the code for **MaterializedViewFunction.cs**
+1. **MaterializedViewFunction.cs**のコードで次のセクションを見つけます。
 
    ```csharp
    if (input != null && input.Count > 0)
@@ -499,7 +496,7 @@ The Azure Function receives a list of Documents that have changed. We want to or
    }
    ```
 
-1. Replace the two logging lines with the following code:
+1. 2つのログ出力行を次のコードに置き換えます。
 
    ```csharp
    var stateDict = new Dictionary<string, List<double>>();
@@ -523,7 +520,7 @@ The Azure Function receives a list of Documents that have changed. We want to or
    }
    ```
 
-1. Following the conclusion of this _foreach_ loop, add this code to connect to our destination container:
+1. このforeachループの終了後、次のコードを追加して宛先コンテナーに接続します。
 
    ```csharp
       var database = _client.GetDatabase(_databaseId);
@@ -532,7 +529,7 @@ The Azure Function receives a list of Documents that have changed. We want to or
       //todo - Next steps go here
    ```
 
-1. Because we're dealing with an aggregate collection, we'll be either creating or updating a document for each entry in our dictionary. For starters, we need to check to see if the document we care about exists. Add the following code after the `todo` line above:
+1. 集計コレクションを扱っているため、ディクショナリの各エントリのドキュメントを作成または更新します。手始めに、処理が必要なドキュメントが存在するかどうかを確認する必要があります。上記の行の後に次のコードを追加します。
 
    ```csharp
    var tasks = new List<Task>();
@@ -563,9 +560,9 @@ The Azure Function receives a list of Documents that have changed. We want to or
    await Task.WhenAll(tasks);
    ```
 
-   > Take note of the _maxItemCount_ on the **CreateItemQuery** call. We're only expecting a single result at most because each state has at most one document.
+   > **QueryRequestOptions**の _MaxItemCount_ に注意します。各州には最大で1つのドキュメントがあるため、最大で1つの結果しか期待できません。
 
-1. In the case that the stateCount object is _null_ we'll create a new one. Replace the `//todo: Add new doc code here` section with the following code:
+1. stateCountオブジェクトが _null_ の場合は、新しいオブジェクトを作成します。`//todo: Add new doc code here`セクションを次のコードに置き換えます。
 
    ```csharp
    stateCount = new StateCount();
@@ -574,35 +571,37 @@ The Azure Function receives a list of Documents that have changed. We want to or
    stateCount.Count = stateDict[key].Count;
    ```
 
-1. In the case that the stateCount object exists, we'll update it. Replace the `//todo: Add existing doc code here` section with the following code:
+1. stateCount オブジェクトが存在する場合は、それを更新します。`//todo: Add existing doc code here`セクションを次のコードに置き換えます。
 
    ```csharp
     stateCount.TotalSales += stateDict[key].Sum();
     stateCount.Count += stateDict[key].Count;
    ```
 
-1. Finally, we'll do an _upsert_ (Update or Insert) operation on our destination Cosmos DB account. Replace the `//todo: Upsert document` section with the following code:
+1. 最後に、宛先のCosmos DBアカウントでアップサート（更新または挿入）操作を実行します。`//todo: Upsert document`セクションを次のコードに置き換えます。
 
    ```csharp
    log.LogInformation("Upserting materialized view document");
    tasks.Add(container.UpsertItemAsync(stateCount, new Microsoft.Azure.Cosmos.PartitionKey(stateCount.State)));
    ```
 
-   > We're using a list of tasks here because we can do our upserts in parallel.
+   > ここでは、アップサートを並行して実行するため、タスクのリストを使用しています。
 
-1. Your **MaterializedViewFunction** should now look like this:
+1. Your **MaterializedViewFunction** should now look like this:**MaterializedViewFunction**は次のようになります。
 
    ```csharp
+   using System;
    using System.Collections.Generic;
-   using System.Threading.Tasks;
    using Microsoft.Azure.Documents;
    using Microsoft.Azure.WebJobs;
    using Microsoft.Azure.WebJobs.Host;
    using Microsoft.Extensions.Logging;
+   using System.Threading.Tasks;
    using System.Linq;
    using Newtonsoft.Json;
    using Microsoft.Azure.Cosmos;
    using Shared;
+
 
    namespace ChangeFeedFunctions
    {
@@ -685,197 +684,212 @@ The Azure Function receives a list of Documents that have changed. We want to or
    }
    ```
 
-### Test to Confirm the Materialized View Functions Works
+### マテリアライズドビュー関数が機能することを確認する
 
-1. Open three terminal windows.
+1. Open three terminal windows.3つのターミナル ウィンドウを開きます。
 
-1. In the **first** terminal window, navigate to the **DataGenerator** folder
+1. **最初の**ターミナルウィンドウで、**DataGenerator**フォルダに移動します。
 
-1. Start the **DataGenerator** by entering and executing the following in the **first** terminal window:
-
-   ```sh
-   dotnet run
-   ```
-
-1. In a **second** terminal window, navigate to the **ChangeFeedConsole** folder
-
-1. Start the **ChangeFeedConsole** consumer by entering and executing the following in the **second** terminal window:
+1. **最初の**ターミナルウィンドウで以下を入力して実行することにより、**DataGenerator**を起動します。
 
    ```sh
    dotnet run
    ```
 
-1. In the **third** terminal window, navigate to the **ChangeFeedFunctions** folder
+1. **2番目**のターミナルウィンドウで、**ChangeFeedConsole**フォルダーに移動します。
 
-1. In the **third** terminal window, start the Azure Functions by entering and executing the following:
+1. **2番目の**ターミナルウィンドウで、次のように入力して実行して**ChangeFeedConsole**を起動します。
+
+   ```sh
+   dotnet run
+   ```
+
+1. **3番目の**ターミナル ウィンドウで、**ChangeFeedFunctions**フォルダーに移動します。
+
+1. **3番目の**ターミナル ウィンドウで、次のように入力して実行してAzure Functionsを起動します。
 
    ```sh
    func host start
    ```
 
-   > If prompted, select **Allow access**
+   > If prompted, select **Allow access**メッセージが表示されたら、**Allow access**を選択します。
 
-   > Data will pass from DataGenerator > CartContainer > ChangeFeedConsole > CartContainerByState > MaterializedViewFunction > StateSales
+   > データは、DataGenerator > CartContainer > ChangeFeedConsole > CartContainerByState > MaterializedViewFunction > StateSalesの順で連携されます。
 
-1. You should see the asterisks in the **first** window as data is being generated, and in the **second** and **third** windows you should see console messages indicating that your functions are running.
+1. データが生成されているときは**最初の**ウィンドウにアスタリスクが表示され、**2番目**と **3番目**のウィンドウには関数が実行されていることを示すコンソールメッセージが表示されます。
 
-1. Open a browser window and navigate to the Cosmos DB resource Data Explorer
+1. ブラウザーウィンドウを開き、Cosmos DBのデータエクスプローラーに移動します。
 
-1. Expand **StoreDatabase**, then **StateSales** and select **Items**
+1. **StoreDatabase**、**StateSales**の順に展開し、**Items**を選択します。
 
-1. You should see data being populated in the container by state, select on an item to see the contents of the data.
+1. 州別にコンテナーにデータが入力されているのを確認し、項目を選択してデータの内容を表示します。
 
    ![The Cosmos DB StateSales container is displayed](../media/08-cosmos-state-sales.jpg "Browse the StateSales container items")
 
-1. In the **first** terminal window, press any key to stop data generation
+1. **最初の**ターミナルウィンドウで、任意のキーを押してデータ生成を停止します。
 
-1. In the **second** terminal window, press any key to stop data migration
+1. **2番目の**ターミナルウィンドウで、任意のキーを押してデータ移行を停止します
 
-1. In the **third** terminal window, let the function finish processing data by waiting for the console log messages to stop. It should only take a few seconds. Then press `Ctrl+C` to end execution of the functions.
+1. **3番目の**ターミナルウィンドウで、コンソールログメッセージが停止するのを待って、関数がデータの処理を終了できるようにします。（数秒）次に、`Ctrl+C`を押して関数の実行を終了します。
 
-## Use Azure Cosmos DB Change Feed to Write Data to EventHub using Azure Functions
+## 変更フィードを使用して、Azure Functions経由でEvenet Hubにデータを書き込む
 
-In the final example of a Change Feed use case in this lab, you'll write a simple Azure Function to write out change data to an Azure Event Hub. You'll use a stream Processor to create real-time data outputs that you can consume in Power BI to build an e-commerce dashboard.
+このラボの変更フィードのユースケースの最後の例では、変更データをAzure Event Hubに書き出す簡単な Azure Functionsを記述します。ストリープロセッサを使用して、Power BIで使用できるリアルタイムのデータ出力を作成し、eコマースダッシュボードを構築します。
 
-### Create a Power BI Account (Optional)
+### Power BI アカウントを作成する (省略可能)
 
 This step is optional, if you do not wish to follow the lab to creating the dashboard you can skip it
+この手順は省略可能です。ラボに従ってダッシュボードを作成しない場合は、スキップできます。
 
-> To sign up for a Power BI account, visit [the Power BI site](https://powerbi.microsoft.com/en-us/) and select **Sign up free**.
+> Power BI アカウントにサインアップするには、[Power BIサイト](https://powerbi.microsoft.com/)にアクセスし、 **無料で試す**を選択します。
 
-1. Once logged in, create a new workspace called **CosmosDB**
+1. **CosmosDB**ログインしたら、**CosmosDB**という名前の新しいワークスペースを作成します。
 
-### Retrieve Azure Event Hub Connection Info
+### Azure Event Hubsの接続情報を取得する
 
-1. Switch to the [Azure Portal](https://portal.azure.com)
+1. [Azure Portal](https://portal.azure.com)に切り替えます。
 
-1. On the left side of the portal, select the **Resource groups** link.
+1. ポータルの左側で**リソースグループ**リンクを選択します。
 
    ![Resource Groups is highlighted](../media/08-select-resource-groups.jpg "Browse to resource groups")
 
-1. In the **Resource groups** blade, locate and select the **cosmoslabs** resource group.
+1. **リソースグループ**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
    ![The lab resource group is highlighted](../media/08-cosmos-in-resources.jpg "Select your lab resource group")
 
-1. In the **cosmoslabs** resource blade, and select the Event Hub namespace.
+1. **cosmoslabs**リソースブレードで、**Event Hubs名前空間**を選択します。
 
    ![The lab Event Hub is highlighted](../media/08-cosmos-select-hub.jpg "Select the lab Event Hub resource")
 
-1. In the **Event Hub** blade, find **Shared Access Policies** under **Settings** and select it
+1. **Event Hubs名前空間**ブレードで、**設定**の下の**共有アクセスポリシー**を選択します。
 
-1. In the **Shared Access Policies** blade, select the policy **RootManageSharedAccessKey**
+1. **共有アクセスポリシー**ブレードで、**RootManageSharedAccessKey**ポリシーを選択します。
 
-1. In the panel that appears, copy the value for **Connection string-primary key** and save it for use later in this lab.
+1. 表示されるパネルで、**接続文字列 – 主キー**の値をコピーし、このラボの後半で使用するために保存します。
 
    ![The Event Hub Keys are highlighted](../media/08-event-hub-keys.jpg "Copy and save the connection string for later use")
 
-### Create Outputs for the Azure Stream Analytics Job
+## Azure Stream Analyticsジョブの出力を作成する
 
-This step is optional, if you do not wish to connect to Power BI to visualize your Event Hub, you may skip it
+この手順は省略可能です。Power BIに接続してEvent Hubを視覚化しない場合には、スキップできます。
 
-1. Return to the **cosmoslabs** blade in the browser
+1. ブラウザで**cosmoslabs**ブレードに戻ります。
 
-1. In the **cosmoslabs** resource blade and select the stream analytics job
+1. **cosmoslabs**リソースで**CartStreanProcessor**を見つけて選択します。
 
    ![Stream Analytics is highlighted](../media/08-select-stream-processor.jpg "Select the stream analytics resource")
 
-1. Select **Outputs** on the **CartStreamProcessor** Overview Screen
+1. **CartStreanProcessor**の概要画面で、左側のメニューから**出力**を選択します。
 
    ![The Stream Analytics resource overview blade is displayed](../media/08-stream-processor-output.jpg "Review the overview blade")
 
-1. At the top of the **Outputs** page, select **+Add** and choose **Power BI**
+1. **出力**ページの上部にある **+出力を追加する**を選択し、**Power BI**を選択します。
 
    ![Power BI is highlighted](../media/08-add-power-bi.jpg "Choose Power BI")
 
-1. Select the **Authorize** button and follow the login prompts to authorize this output in your Power BI account
+1. 表示されるウィンドウで、次のデータを入力します。
 
-1. In the window that appears enter the following data
+   - _出力エイリアス_ : `averagePriceOutput`
 
-   - Set _Output alias_ to `averagePriceOutput`
+   - `サブスクリプションからPower BIを選択する`を選択します。
 
-   - Set _Group workspace_ to `CosmosDB` or whatever name you used when you created a new workspace in Power BI
+   - _グループワークスペース_ : `CosmosDB`（もしくは作成済みの任意のPower BIのワークスペース）
 
-   - Set _Dataset name_ to `averagePrice`
+   - _認証モード_ : `ユーザートークン`
 
-   - Set _Table name_ to `averagePrice`
+   - _データセット名_ : `averagePrice`
 
-   - Set _Authentication mode_ to `User token`
+   - _テーブル名_ : `averagePrice`
 
-   - Select **Save**
+　 - _接続を承認する_ で`承認`ボタンが表示された場合は、承認します。
+
+   - **保存**を選択します。
 
    ![The New output dialog is displayed](../media/08-adding-output.jpg "Set the values and select Save")
 
-1. Repeat the previous step to add a second output
+1. 前の手順を繰り返して、2番目の出力を追加します。
 
-   - Set _Output alias_ to `incomingRevenueOutput`
+   - _出力エイリアス_ : `incomingRevenueOutput`
 
-   - Set _Group workspace_ to `cosmosdb`
+   - `サブスクリプションからPower BIを選択する`を選択します。
 
-   - Set _Dataset name_ to `incomingRevenue`
+   - _グループワークスペース_ : `CosmosDB`（もしくは作成済みの任意のPower BIのワークスペース）
 
-   - Set _Table name_ to `incomingRevenue`
+   - _認証モード_ : `ユーザートークン`
 
-   - Set _Authentication mode_ to `User token`
+   - _データセット名_ : `incomingRevenue`
 
-   - Select **Save**
+   - _テーブル名_ : `incomingRevenue`
 
-1. Repeat the previous step to add a third output
+　 - _接続を承認する_ で`承認`ボタンが表示された場合は、承認します。
 
-   - Set _Output alias_ to `top5Output`
+   - **保存**を選択します。
 
-   - Set _Group workspace_ to `cosmosdb`
+1. Repeat the previous step to add a third output前の手順を繰り返して3番目の出力を追加します。
 
-   - Set _Dataset name_ to `top5`
+   - _出力エイリアス_ : `top5Output`
 
-   - Set _Table name_ to `top5`
+   - `サブスクリプションからPower BIを選択する`を選択します。
 
-   - Set _Authentication mode_ to `User token`
+   - _グループワークスペース_ : `CosmosDB`（もしくは作成済みの任意のPower BIのワークスペース）
 
-   - Select **Save**
+   - _認証モード_ : `ユーザートークン`
 
-1. Repeat the previous step add a fourth (and final) output
+   - _データセット名_ : `top5`
 
-   - Set _Output alias_ to `uniqueVisitorCountOutput`
+   - _テーブル名_ : `top5`
 
-   - Set _Group workspace_ to `cosmosdb`
+　 - _接続を承認する_ で`承認`ボタンが表示された場合は、承認します。
 
-   - Set _Dataset name_ to `uniqueVisitorCount`
+   - **保存**を選択します。
 
-   - Set _Table name_ to `uniqueVisitorCount`
+1. 前の手順を繰り返して4番目の出力を追加します。
 
-   - Set _Authentication mode_ to `User token`
+   - _出力エイリアス_ : `uniqueVisitorCountOutput`
 
-   - Select **Save**
+   - `サブスクリプションからPower BIを選択する`を選択します。
 
-1. Once you've completed these steps, the **Outputs** blade should look like this:
+   - _グループワークスペース_ : `CosmosDB`（もしくは作成済みの任意のPower BIのワークスペース）
+
+   - _認証モード_ : `ユーザートークン`
+
+   - _データセット名_ : `uniqueVisitorCount`
+
+   - _テーブル名_ : `uniqueVisitorCount`
+
+　 - _接続を承認する_ で`承認`ボタンが表示された場合は、承認します。
+
+   - **保存**を選択します。
+
+1. これらの手順を完了すると**出力**ブレードは次のようになります。
 
    ![The Outputs Blade is displayed with four outputs](../media/08-outputs-blade.jpg "You should see four outputs now")
 
-### Create an Azure Function to write data to the Event Hub
+### Event Hubsにデータを書き込む関数を作成する
 
-With all of the configuration out of the way, you'll see how simple it is to write an Azure Function to write change data to your new Event Hub in real time
+変更データを新しいEvent Hubにリアルタイムで書き込む関数を作成します。簡単に作成できることができます。
 
-1. Open a terminal window and navigate to the the **ChangeFeedFunctions** folder
+1. ターミナルウィンドウを開き、**ChangeFeedFunctions**フォルダーに移動します。
 
-1. Create a new function by entering and executing the following command:
+1. 次のコマンドを入力して実行し、新しい関数を作成します。
 
    ```sh
    func new
    ```
 
-   1. When prompted select **CosmosDBTrigger** as the _template_
+   1. メッセージが表示されたら、_template_ として**CosmosDBTrigger**を選択します。
 
-   1. When prompted enter `AnalyticsFunction` as the _name_
+   1. メッセージが表示されたら、_name_ として`AnalyticsFunction`を入力します。
 
-1. Add the [Microsoft Azure Event Hubs](https://www.nuget.org/packages/Microsoft.Azure.EventHubs/) NuGet Package by entering and executing the following:
+1. 次のコマンドを入力して実行し、[Microsoft Azure Event Hubs](https://www.nuget.org/packages/Microsoft.Azure.EventHubs/) NuGetパッケージを追加します。
 
    ```sh
    dotnet add package Microsoft.Azure.EventHubs --version 4.3.0
    ```
 
-1. Select new **AnalyticsFunction.cs** file to open it in the editor
+1. **AnalyticsFunction.cs**ファイルをエディターで開きます。
 
-1. Add the following using statements to the top of the **AnalyticsFunction.cs** file
+1. 次の using ステートメントを**AnalyticsFunction.cs**ファイルの先頭に追加します。
 
    ```csharp
    using Microsoft.Azure.EventHubs;
@@ -883,22 +897,23 @@ With all of the configuration out of the way, you'll see how simple it is to wri
    using System.Text;
    ```
 
-1. Modify the signature of the **Run** function by setting
+1. **Run**関数のシグネチャを以下のように設定します。
 
    - **databaseName** to `StoreDatabase`
    - **collectionName** to `CartContainer`
    - **ConnectionStringSetting** to `DBConnection`
    - **LeaseCollectionName** to `analyticsLeases`.
 
-1. In between the **ConnectionStringSetting** and **LeaseCollectionName** add the following line:
+1.  **ConnectionStringSetting**と**LeaseCollectionName**の間に次の行を追加します。
 
    ```csharp
    CreateLeaseCollectionIfNotExists = true,
    ```
 
-1. Modify the **Run** function to be `async`. The code file should now look like this:
+1. **Run**関数を`async Task`に変更します。コードは次のようになります。
 
    ```csharp
+   using System;
    using System.Collections.Generic;
    using Microsoft.Azure.Documents;
    using Microsoft.Azure.WebJobs;
@@ -930,16 +945,16 @@ With all of the configuration out of the way, you'll see how simple it is to wri
    }
    ```
 
-1. At the top of the class, add the following configuration parameters:
+1. クラスの先頭に、次の構成パラメーターを追加します。
 
    ```csharp
    private static readonly string _eventHubConnection = "<event-hub-connection>";
    private static readonly string _eventHubName = "carteventhub";
    ```
 
-1. Replace the placeholder in **\_eventHubConnection** with the value of the Event Hubs **Connection string-primary key** you collected earlier.
+1. **\_eventHubConnection**の値を前の手順で確認した**C接続文字列 – 主キー**に置き換えます。
 
-1. Start by creating an **EventHubClient** by replacing the two logging lines with the following code:
+1. 2つのログ出力行を次のコード行に置き換えて、**EventHubClient**を作成します。
 
    ```csharp
    var sbEventHubConnection = new EventHubsConnectionStringBuilder(_eventHubConnection){
@@ -951,7 +966,7 @@ With all of the configuration out of the way, you'll see how simple it is to wri
    //todo: Next steps here
    ```
 
-1. For each document that changed we want to write the data out to the Event Hub. Fortunately, we configured our Event Hub to expect JSON data so there's very little processing to do here. Add the following code snippet.
+1. 変更されたドキュメントごとに、データをEvent Hubに書き込みます。JSONデータを想定するようにイベントハブを構成しているので、ここで行う処理はほとんどありません。`//todo: Next steps here`を次のコード行で置き換えます。
 
    ```csharp
    var tasks = new List<Task>();
@@ -969,7 +984,7 @@ With all of the configuration out of the way, you'll see how simple it is to wri
    await Task.WhenAll(tasks);
    ```
 
-1. The final version of the **AnalyticsFunction** looks like this:
+1. 最終的に**AnalyticsFunction**は次のようになります。
 
    ```csharp
    using System.Collections.Generic;
@@ -1024,89 +1039,90 @@ With all of the configuration out of the way, you'll see how simple it is to wri
    }
    ```
 
-### Creating a Power BI Dashboard to Test the AnalyticsFunction
+### AnalyticsFunctionをテストするためにPower BIダッシュボードを作成する
 
-1. Once again, open three terminal windows.
+1. もう一度、3つのターミナル ウィンドウを開きます。
 
-1. In the **first** terminal window navigate to the **DataGenerator** folder
+1. **最初の**ターミナルウィンドウで、**DataGenerator**フォルダに移動します。
 
-1. In the **first** terminal window start the data generation process by entering and executing the following line:
+
+1. **最初の**ターミナルウィンドウで以下を入力して実行することにより、**DataGenerator**を起動します。
 
    ```sh
    dotnet run
    ```
 
-1. In the **second** terminal window navigate to the **ChangeFeedFunctions** folder
+1. **2番目**のターミナルウィンドウで、**ChangeFeedConsole**フォルダーに移動します。
 
-1. In the **second** terminal window, start the Azure Functions by entering and executing the following line:
+1.**2番目の**ターミナルウィンドウで、次のように入力して実行して**ChangeFeedConsole**を起動します。
+
+   ```sh
+   dotnet run
+   ```
+
+1. **3番目の**ターミナル ウィンドウで、**ChangeFeedFunctions**フォルダーに移動します。
+
+1. **3番目の**ターミナル ウィンドウで、次のように入力して実行してAzure Functionsを起動します。
 
    ```sh
    func host start
    ```
 
-1. In the **third** terminal window navigate to the **ChangeFeedConsole** folder
+### _残りの手順はPower BIでEvent Hubの出力データを視覚化しない場合にはスキップできます_
 
-1. In the **third** terminal window, start the change feed console processor by entering and executing the following line:
+1. 次の手順に進む前に、データ ジェネレーターが実行されていること、および Azure 関数とコンソール変更プロセッサが起動していることを確認します。
 
-   ```sh
-   dotnet run
-   ```
-
-### _The remaining steps are optional, if you do not wish to visualize the Event Hub output data in Power BI, you may skip them_
-
-1. Confirm the data generator is running and that the Azure Functions and Console Change Processor are firing before proceeding to the next steps
-
-1. Return to the **CartStreamProcessor** overview screen and select the **Start** button at the top to start the processor. When prompted choose to start the output **now**. Starting the processor may take several minutes.
+1. **CartStreamProcessor**の概要画面に戻り、上部にある**Start**ボタンを選択してプロセッサを起動します。プロンプトが表示されたら、今すぐ出力を開始することを選択します。プロセッサの起動には数分かかる場合があります。
 
 > [!TIP]
-> If the Stream Analytics Job fails to start it may be due to a bad connection to Event Hubs. To correct this to go **Inputs** in the Stream Analytics Job, then note the Service Bus namespace and Event Hub name, then delete the `cartInput` connection to the Event Hub and recreate it.
+> Stream Analyticsジョブの開始に失敗した場合は、Event Hubsへの接続不良が原因である可能性があります。これを修正するには、Stream Analyticジョブの入力に移動し、Service Bus名前空間とイベンハブ名をメモしてから、Event Hubsへの`cartInput`接続を削除して再作成します。
 
    ![The start link is highlighted](../media/08-start-processor.jpg "Start the stream analytics job")
 
-   > Wait for the processor to start before continuing
+   > プロセッサが起動するのを待ってから続行します。
 
-1. Open a web browser and navigate to the **Power BI** website.
+1. ブラウザーを開き、[Power BIサイト](https://powerbi.microsoft.com/)に移動します。
 
-1. Sign in, and choose **CosmosDB** from the left hand section
+1. サインインし、左側のセクションから**CosmosDB**を選択します。
 
    ![The Power BI portal is displayed](../media/08-power-bi.jpg "Open the PowerBI website")
 
-1. In the top right of the screen select **Create** and choose **Dashboard** give the dashboard any _Name_
+1. 画面の左上にある **+新規**を選択し、**ダッシュボード**を選択してダッシュボードに任意の _名前_ を付けます。
 
-1. In the **Dashboard** screen, select **Add tile** from the top
+1. **ダッシュボード**画面で、上部から**編集**を選択し、**タイルの追加**を選択します。
 
    ![Add Tile link is highlighted](../media/08-power-bi-add-title.jpg "Add a new tile")
 
-1. Choose **Custom Streaming Data** and hit **Next**
+1. **カスタムストリーミングデータ**を選択し、**次へ**をクリックします
 
    ![The real-time data streaming tile is highlighted.](../media/08-pbi-custom-streaming-data.jpg "Add a new stream data item")
 
-1. Choose **averagePrice** from the **Add custom streaming data tile** window
+1. **カスタムストリーミングデータの追加**ウィンドウから **averagePrice**を選択して**次へ**を選択します。
 
    ![averagePrice is highlighted](../media/08-add-averageprice-pbi.jpg "Select averagePrice")
 
-1. From _Visualization Type_ select **Clustered bar char**
+1. _ビジュアラゼーションの種類_ から **集横棒グラフ**を選択します。
 
-   - Under _Axis_ select **Add Value** and select **Action**
+   - _軸_ で**値の追加**を選択し、**Action**を選択します。
 
-   - Under _Value_ select **Add value** and select **AVG**
+   - _値_ で**値の追加**を選択し、**AVG**を選択します。
 
-   - Select **Next**
+   - **次へ**を選択します。
 
    ![The settings of the tile are highlighted](../media/08-power-bi-first-tile.jpg "Configure the tile")
 
-   - Give it a name like `Average Price` and select **Apply**
+   - 名前を`Average Price`として、**適用**を選択します。
 
-1. Follow these same steps to add tiles for the remaining three inputs
+1. 同様に、残りの 3 つの入力のタイルを追加します。
 
-   - For **incomingRevenue** select a **Line chart** with **Axis** set to `Time` and **Values** set to `Sum`. Set **Time window to display** to at least 30 minutes.
+   - **incomingRevenue**では**軸**は`Time`に、**値**は`SUM`に設定した**折れ線グラフ**を選択します。**表示する時間枠**を30分以上に設定します。
 
-   - For **uniqueVisitors** select a **Card** with **Fields** set to `uniqueVisitors`
+   - **uniqueVisitors**では**フィールド**に`uniqueVisitors`が設定された**カード**を選択します。
 
-   - For **top5** select a **Clustered column chart** with **Axis** set to `Item` and **Value** set to `countEvents`
+   - **top5**では、**軸**を`item`に、**値**を`countEvents`に設定した**集合縦棒グラフ**を選択します。
 
-1. When complete, you'll have a dashboard that looks like the image below, updating in real time!
+1. 完了すると、下の画像のようなダッシュボードがリアルタイムで更新されます。
 
    ![The Final Power BI Dashboard is displayed with real-time data flowing](../media/08-power-bi-dashboard.jpg "Review the new dashboard")
 
-> If this is your final lab, follow the steps in [Removing Lab Assets](11-cleaning_up.md) to remove all lab resources.
+> 以降のラボを実施しない場合は、[Removing Lab Assets](11-cleaning_up.md) の手順に従ってすべてのラボリソースを削除します。
