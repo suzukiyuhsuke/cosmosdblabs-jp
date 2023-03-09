@@ -22,7 +22,7 @@ e-コマースWebサイトでの操作を想定してカート内のデータを
 
 1. 以前のラボでメモしていたAzure Cosmos DBの資格情報から、`_endpointUri`変数の値に、**URI**を、`_primaryKey`変数の値に**プライマリーキー**を入力してください。資格情報が不明な場合は、[こちら](00-account_setup.md)の手順を参照してください。
 
-    - > 例として **uri** が `https://cosmosacct.documents.azure.com:443/` の場合、記述は以下のようになります
+    - 例として **uri** が `https://cosmosacct.documents.azure.com:443/` の場合、記述は以下のようになります
 
     ```csharp
     private static readonly string _endpointUri = "https://cosmosacct.documents.azure.com:443/";
@@ -1072,10 +1072,28 @@ This step is optional, if you do not wish to follow the lab to creating the dash
 
 1. 次の手順に進む前に、データ ジェネレーターが実行されていること、および Azure 関数とコンソール変更プロセッサが起動していることを確認します。
 
-1. **CartStreamProcessor**の概要画面に戻り、上部にある**Start**ボタンを選択してプロセッサを起動します。プロンプトが表示されたら、今すぐ出力を開始することを選択します。プロセッサの起動には数分かかる場合があります。
+1. **CartStreamProcessor**の概要画面に戻り、上部にある**開始**ボタンを選択してプロセッサを起動します。プロンプトが表示されたら、今すぐ出力を開始することを選択します。プロセッサの起動には数分かかる場合があります。
 
 > [!TIP]
 > Stream Analyticsジョブの開始に失敗した場合は、Event Hubsへの接続不良が原因である可能性があります。これを修正するには、Stream Analyticジョブの入力に移動し、Service Bus名前空間とイベンハブ名をメモしてから、Event Hubsへの`cartInput`接続を削除して再作成します。
+
+> Stream Analyticsジョブの起動に失敗した際にクエリのエラーが出力された場合は、左側の**クエリ**を選択し、表示された内容を以下に置き換えて保存して、再度Stream Analyticsジョブを開始してください。
+   ```
+   /*TOP 5*/ WITH Counter AS ( SELECT Item, Price, Action, COUNT(*) AS
+      countEvents FROM cartinput WHERE Action = 'Purchased' GROUP BY Item, Price, Action,
+      TumblingWindow(second,300) ), top5 AS ( SELECT DISTINCT CollectTop(5)  OVER
+      (ORDER BY countEvents) AS topEvent FROM Counter GROUP BY TumblingWindow(second,300) ),
+      arrayselect AS  ( SELECT arrayElement.ArrayValue FROM top5 CROSS APPLY
+      GetArrayElements(top5.topevent) AS arrayElement )  SELECT arrayvalue.value.item,
+      arrayvalue.value.price, arrayvalue.value.countEvents INTO top5Output FROM
+      arrayselect /*REVENUE*/ SELECT System.TimeStamp AS Time, SUM(Price) INTO
+      incomingRevenueOutput FROM cartinput WHERE Action = 'Purchased' GROUP BY
+      TumblingWindow(minute, 5) /*UNIQUE VISITORS*/ SELECT System.TimeStamp AS Time,
+      COUNT(DISTINCT CartID) as uniqueVisitors INTO uniqueVisitorCountOutput FROM cartinput
+      GROUP BY TumblingWindow(second, 30)  /*AVERAGE PRICE*/      SELECT System.TimeStamp
+      AS Time, Action, AVG(Price)   INTO averagePriceOutput   FROM cartinput   GROUP BY
+      Action, TumblingWindow(second,30) 
+   ```
 
    ![The start link is highlighted](../media/08-start-processor.jpg "Start the stream analytics job")
 

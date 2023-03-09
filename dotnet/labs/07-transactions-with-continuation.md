@@ -322,7 +322,7 @@
 
 1. ポータルの左側で、**Resource groups**リンクを選択します。
 
-1. 1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
+1. **Resource groups**ブレードで、**cosmoslabs**リソースグループを見つけて選択します。
 
 1. **cosmoslabs**ブレードで、作成されている**Azure Cosmos DB**を選択します。
 
