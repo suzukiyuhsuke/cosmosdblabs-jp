@@ -14,7 +14,7 @@ namespace DataGenerator
         private static readonly string _containerId = "CartContainer";
         private static CosmosClient _client = new CosmosClient(_endpointUrl, _primaryKey);
 
-        private Random _random = new Random();
+        private static Random _random = new Random();
 
         static async Task Main(string[] args)
         {
