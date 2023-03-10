@@ -73,8 +73,8 @@ In addition to the above workshop decks, we have hands-on labs. We have labs ava
 - [ラボ5：.NETコンソールアプリの作成](dotnet/labs/05-build_net_app.md)
 - [ラボ6：複数のドキュメントにまたがったトランザクション](dotnet/labs/06-multi-document-transactions.md)
 - [ラボ7：トランザクションの継続](dotnet/labs/07-transactions-with-continuation.md)
-- [ラボ8：変更フィードの概要](dotnet/labs/08-change_feed_with_azure_functions.md)*未訳*
-- [ラボ9：パフォーマンスのトラブルシューティング](dotnet/labs/09-troubleshooting-performance.md)*未訳*
+- [ラボ8：変更フィードの概要](dotnet/labs/08-change_feed_with_azure_functions.md)
+- [ラボ9：パフォーマンスのトラブルシューティング](dotnet/labs/09-troubleshooting-performance.md)
 - [ラボ10：オプティミスティックな同時実行制御](dotnet/labs/10-concurrency-control.md)*未訳*
 - [事後作業：クリーンアップ](dotnet/labs/11-cleaning_up.md)*未訳*
 
